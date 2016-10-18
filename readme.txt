@@ -30,7 +30,7 @@ SOME HIGHLIGHTS OF THE GAME INCLUDE :
 *** MOTION DISPLAY AND REAL LIFE ENVIRONMENT ***
 The game includes motion/movement of bike in presence of obstacles all the more increasing the attraction of the game. Also the increasing speed of the bike and reducing speed on collisions make sure that the player feels the adrenaline just like in the real world.
 
-***USAGE OF MULTITHREADING***
+*** USAGE OF MULTITHREADING ***
 In most modern operating systems it is possible for an application to split into many "threads" that all execute concurrently. One of the many applications of "Threading" will be depicted in this game.
    
 *** INTERACTIVE AND BRIGHT GAME PLAY ***
@@ -47,5 +47,5 @@ A single press of the right/left arrow keys changes the direction of the bike(ne
 Press 'p' to pause the game and 'o' for options.
 
 
-================================================================================= ENJOY ==============================================================================
+======================================================== ENJOY ==================================================================
 
