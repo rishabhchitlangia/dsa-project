@@ -29,17 +29,11 @@ SOME HIGHLIGHTS OF THE GAME INCLUDE :
 
 *** MOTION DISPLAY AND REAL LIFE ENVIRONMENT ***
 The game includes motion/movement of bike in presence of obstacles all the more increasing the attraction of the game. Also the increasing speed of the bike and reducing speed on collisions make sure that the player feels the adrenaline just like in the real world.
-
-*** USAGE OF MULTITHREADING ***
-In most modern operating systems it is possible for an application to split into many "threads" that all execute concurrently. One of the many applications of "Threading" will be depicted in this game.
-   
+  
 *** INTERACTIVE AND BRIGHT GAME PLAY ***
 Bright colors and animation along with continuous movement of obstacles makes the game interactive and fun.
 
-*** HEARTS DEPICT REMAINING LIVES ***
-Bright red hearts on the right side of the screen depict remaining lives of the biker/player.
-
-*** EXTRA FEATURE OF NITRO TO INCREASE SPEED ***
+*** EXTRA FEATURE OF NITRO TO INCREASE SPEED AND EXTRA LIFE ***
 A obstacle in the shape of N has to be collided with to increase speed of the bike to maximum and thereby increasing the score.
 
 *** USER INTERFACE ***
