@@ -19,6 +19,7 @@
 *********************************************************************************/
 Rishabh Chitlangia
 111508058
+A lot of functions have not been implemented and major bugs need to be fixed.
 
 
 MotoGT is a single player obstacle dodge game which enables the player to experience racing like environment. The objective is to get the maximum score by dodging randomly generated obstacles. 
@@ -35,6 +36,8 @@ Bright colors and animation along with continuous movement of obstacles makes th
 
 *** EXTRA FEATURE OF NITRO TO INCREASE SPEED AND EXTRA LIFE ***
 A obstacle in the shape of N has to be collided with to increase speed of the bike to maximum and thereby increasing the score.
+
+***USAGE OF STACK TO STORE SCORES AND PRINT HIGH-SCORES***
 
 *** USER INTERFACE ***
 A single press of the right/left arrow keys changes the direction of the bike(need not press and hold the key).
