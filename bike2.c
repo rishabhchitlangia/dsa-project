@@ -38,16 +38,16 @@ void game() {
 	int z = 1;
 	int y1 = (rand() % 38), x1 = 20;
 	int y2 = (rand() % 35), x2 = 28;
-	int y3 = (rand() % 40), x3 = 35;
+	//int y3 = (rand() % 40), x3 = 35;
 	while(z){
 	obstacle1(y1, x1);
 	usleep(10000);
 	obstacle2(y2, x2);
 	usleep(10000);
-	obstacle3(y3, x3);
+	//obstacle3(y3, x3);
 	y1++;
 	y2++;
-	y3++;
+	//y3++;
 	if(kbhit()) {
 	ch = wgetch(stdscr);
 		switch(ch) {
