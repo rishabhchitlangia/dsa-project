@@ -34,7 +34,7 @@ The game includes motion/movement of bike in presence of obstacles all the more 
 In most modern operating systems it is possible for an application to split into many "threads" that all execute concurrently. One of the many applications of "Threading" will be depicted in this game.
    
 *** INTERACTIVE AND BRIGHT GAME PLAY ***
-Bight colors and animation along with continuous movement of obstacles makes the game interactive and fun.
+Bright colors and animation along with continuous movement of obstacles makes the game interactive and fun.
 
 *** HEARTS DEPICT REMAINING LIVES ***
 Bright red hearts on the right side of the screen depict remaining lives of the biker/player.
