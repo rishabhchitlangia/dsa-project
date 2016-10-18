@@ -1,7 +1,7 @@
 /*********************************************************************************
- * This program includes 2048 and motoGT; games developed for recreational purpose
+ * This program motoGT; game developed for recreational purpose
  * and as a part of project.
- * Copyright (C) 2015 Piyush Yadav piyush13y@gmail.com
+ * Copyright (C) 2016 Rishabh Chitlangia rishabh.chitlangia96@gmail.com
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License as published by
