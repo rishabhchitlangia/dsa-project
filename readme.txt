@@ -1,4 +1,4 @@
-/*********************************************************************************
+/********************************************************************************
  * This program motoGT; game developed for recreational purpose
  * and as a part of project.
  * Copyright (C) 2016 Rishabh Chitlangia rishabh.chitlangia96@gmail.com
