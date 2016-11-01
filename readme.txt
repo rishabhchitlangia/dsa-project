@@ -1,5 +1,5 @@
 /********************************************************************************
- * This program motoGT; game developed for recreational purpose
+ * This program motoGT and ultimate tic-tac-toe; game developed for recreational purpose
  * and as a part of project.
  * Copyright (C) 2016 Rishabh Chitlangia rishabh.chitlangia96@gmail.com
  *
@@ -19,30 +19,26 @@
 *********************************************************************************/
 Rishabh Chitlangia
 111508058
-A lot of functions have not been implemented and major bugs need to be fixed.
-
 
 MotoGT is a single player obstacle dodge game which enables the player to experience racing like environment. The objective is to get the maximum score by dodging randomly generated obstacles. 
-This is a 'C' adapted version of 'motoGT' written by Rishabh Chitlangia. The game goes on until the player has made 3 collisions after which its game over. Make sure to collide with Nitro (N) to gain 
+This is a 'C' adapted version of 'ultimate tic-tac-toe' and 'motoGT' written by Rishabh Chitlangia. MotoGT goes on until the player has made 3 collisions after which its game over. Make sure to collide with Nitro (N) to gain 
 speed and score. 
 
-SOME HIGHLIGHTS OF THE GAME INCLUDE :
+SOME HIGHLIGHTS OF THE GAMES INCLUDE :
 
 *** MOTION DISPLAY AND REAL LIFE ENVIRONMENT ***
 The game includes motion/movement of bike in presence of obstacles all the more increasing the attraction of the game. Also the increasing speed of the bike and reducing speed on collisions make sure that the player feels the adrenaline just like in the real world.
   
 *** INTERACTIVE AND BRIGHT GAME PLAY ***
 Bright colors and animation along with continuous movement of obstacles makes the game interactive and fun.
+TWO Different Boards to keep a track about your wins.
 
-*** EXTRA FEATURE OF NITRO TO INCREASE SPEED AND EXTRA LIFE ***
+*** EXTRA FEATURE OF NITRO TO INCREASE SPEED ***
 A obstacle in the shape of N has to be collided with to increase speed of the bike to maximum and thereby increasing the score.
-
-***USAGE OF STACK TO STORE SCORES AND PRINT HIGH-SCORES***
 
 *** USER INTERFACE ***
 A single press of the right/left arrow keys changes the direction of the bike(need not press and hold the key).
-Press 'p' to pause the game and 'o' for options.
-
+Just enter the co-ordinates and you'll find 'X' or 'O' on the board.
 
 ======================================================== ENJOY ==================================================================
 
