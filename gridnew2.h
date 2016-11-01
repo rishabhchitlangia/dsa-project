@@ -1,0 +1,11 @@
+typedef enum {VALID, SPACE_OCCUPIED, OUT_OF_BOUNDS} MoveStatus;
+int big[3][3];
+void init(int board[9][3][3]);
+void initb();
+int checksmall(int board[9][3][3], int k);
+int checkbig();
+int checkfull(int board[9][3][3], int k);
+int check[9];
+void main_ultimate();
+void instructions_ultimate();
+MoveStatus validmove(int board[9][3][3], int k, int r, int c) ;
