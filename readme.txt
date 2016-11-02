@@ -20,14 +20,17 @@
 Rishabh Chitlangia
 111508058
 
-MotoGT is a single player obstacle dodge game which enables the player to experience racing like environment. The objective is to get the maximum score by dodging randomly generated obstacles. 
-This is a 'C' adapted version of 'ultimate tic-tac-toe' and 'motoGT' written by Rishabh Chitlangia. MotoGT goes on until the player has made 3 collisions after which its game over. Make sure to collide with Nitro (N) to gain 
-speed and score. 
+MotoGT is a single player obstacle dodge game which enables the player to experience racing like environment. The objective is to get the maximum score by dodging randomly generated obstacles. MotoGT goes on until the player has made 3 collisions after which its game over. Make sure to collide with Nitro (N) to gain 
+speed and score.
+Win three games of Tic Tac Toe in a row.You may only play in the big board that corresponds to the last sub-board your
+opponent played. When your are sent to a sub-board that is already filled, you can choose freely.
+
+This is a 'C' adapted version of 'ultimate tic-tac-toe' and 'motoGT' written by Rishabh Chitlangia.  
 
 SOME HIGHLIGHTS OF THE GAMES INCLUDE :
 
 *** MOTION DISPLAY AND REAL LIFE ENVIRONMENT ***
-The game includes motion/movement of bike in presence of obstacles all the more increasing the attraction of the game. Also the increasing speed of the bike and reducing speed on collisions make sure that the player feels the adrenaline just like in the real world.
+The game includes motion/movement of bike in presence of obstacles all the more increasing the attraction of the game.
   
 *** INTERACTIVE AND BRIGHT GAME PLAY ***
 Bright colors and animation along with continuous movement of obstacles makes the game interactive and fun.
