@@ -1,26 +1,200 @@
 @import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+/*
+ * Two visual identities live in this file.
+ *
+ * The default is the clean locator: light, high-contrast, unfussy — the
+ * look of a utility you use one-handed on a phone while standing outside.
+ *
+ * `.theme-dive` is the dive-bar treatment. Same components, different
+ * tokens: dark, warm, a little worn. It is scoped to a wrapper so the
+ * grit never leaks into the main site.
+ */
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #fbfaf8;
+  --surface: #ffffff;
+  --surface-2: #f4f2ee;
+  --border: #e3ded6;
+  --text: #1c1917;
+  --text-muted: #6b6560;
+  --accent: #b4451f;
+  --accent-soft: #fdf1ec;
+  --open: #1a7f4b;
+  --open-soft: #e8f5ee;
+  --unverified: #78716c;
+  --unverified-soft: #f0eeeb;
+  --warn: #a2620b;
+  --warn-soft: #fdf3e2;
+  --star: #d08700;
+  --radius: 14px;
+  --shadow: 0 1px 2px rgb(28 25 23 / 0.05), 0 4px 16px -6px rgb(28 25 23 / 0.12);
+}
+
+.theme-dive {
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+
+  --bg: #14110f;
+  --surface: #1e1a17;
+  --surface-2: #272220;
+  --border: #3a322d;
+  --text: #f0e9e0;
+  --text-muted: #a09488;
+  --accent: #e0a13c;
+  --accent-soft: #2c2419;
+  --open: #6cc08a;
+  --open-soft: #1b2b21;
+  --unverified: #8c8178;
+  --unverified-soft: #262120;
+  --warn: #d9a441;
+  --warn-soft: #2b2318;
+  --star: #e0a13c;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -10px rgb(0 0 0 / 0.7);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-text: var(--text);
+  --color-muted: var(--text-muted);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-open: var(--open);
+  --color-open-soft: var(--open-soft);
+  --color-unverified: var(--unverified);
+  --color-unverified-soft: var(--unverified-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-star: var(--star);
+  --radius-card: var(--radius);
+  --font-sans: var(--font-body), system-ui, sans-serif;
+  --font-display: var(--font-display);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  min-width: 0;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  /* Never let a wide element scroll the whole page sideways on a phone. */
+  overflow-x: hidden;
+}
+
+/* Respect the iOS notch / Android gesture bar. */
+.safe-bottom {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+/* Tap targets stay finger-sized regardless of visual density. */
+@media (pointer: coarse) {
+  button,
+  a[role="button"],
+  input,
+  select {
+    min-height: 44px;
+  }
+}
+
+/* --- Leaflet overrides ------------------------------------------------- */
+
+.leaflet-container {
+  background: var(--surface-2);
+  font: inherit;
+  z-index: 0;
+}
+
+.leaflet-control-attribution {
+  background: color-mix(in srgb, var(--surface) 88%, transparent) !important;
+  color: var(--text-muted) !important;
+  font-size: 10px !important;
+}
+
+.leaflet-control-attribution a {
+  color: var(--text-muted) !important;
+}
+
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: var(--surface);
+  color: var(--text);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.leaflet-popup-content {
+  margin: 0.85rem 1rem;
+  font: inherit;
+  width: auto !important;
+}
+
+.leaflet-control-zoom a {
+  background: var(--surface) !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}
+
+/* Custom pin: a coloured teardrop we can theme per category. */
+.theka-pin {
+  background: none !important;
+  border: none !important;
+}
+
+.theka-pin span {
+  display: block;
+  width: 26px;
+  height: 26px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  border: 2px solid var(--surface);
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.35);
+}
+
+.theka-pin.is-selected span {
+  width: 32px;
+  height: 32px;
+  outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  outline-offset: 2px;
+}
+
+/* --- Motion ------------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/*
+ * Grain overlay used only by the dive-bar section.
+ *
+ * It sits *behind* the content, not over it. Painted on top, an overlay
+ * blend drags light text back toward the backdrop and headings stop being
+ * readable — texture is never worth costing legibility.
+ */
+.dive-grain > * {
+  position: relative;
+  z-index: 1;
+}
+
+.dive-grain::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.5;
+  mix-blend-mode: soft-light;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
 }

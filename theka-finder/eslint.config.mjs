@@ -1,16 +1,11 @@
-import { dirname } from "path";
-import { fileURLToPath } from "url";
-import { FlatCompat } from "@eslint/eslintrc";
+import next from "eslint-config-next";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-});
-
+/**
+ * eslint-config-next v16 ships a flat config array directly, so the
+ * FlatCompat shim the scaffold generated is unnecessary — and it crashes
+ * on this ESLint version.
+ */
 const eslintConfig = [
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
     ignores: [
       "node_modules/**",
@@ -18,8 +13,11 @@ const eslintConfig = [
       "out/**",
       "build/**",
       "next-env.d.ts",
+      // Prisma's generated client — not ours to lint.
+      "src/generated/**",
     ],
   },
+  ...next,
 ];
 
 export default eslintConfig;
