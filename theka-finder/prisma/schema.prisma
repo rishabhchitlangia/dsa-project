@@ -1,0 +1,82 @@
+// Theka Finder — Mumbai liquor shop locator
+// Locator only: discovery, hours and community reviews. No sales, no delivery.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// Curation tiers. `legendary` and `dive_bar` are hand-curated in the seed
+/// file, never inferred from ratings or review volume.
+enum Category {
+  standard
+  legendary
+  dive_bar
+}
+
+model Shop {
+  id       String @id @default(cuid())
+  /// URL segment, e.g. /shop/gupta-wine-mart-bandra-west
+  slug     String @unique
+  name     String
+  address  String
+  /// Neighbourhood, e.g. "Bandra West". Stored separately from `address`
+  /// because area search is the homepage's primary job.
+  area     String
+  pincode  String
+  latitude  Float
+  longitude Float
+  phone     String?
+
+  /// Free-form ranges, "HH:MM-HH:MM". Overnight ranges such as
+  /// "17:00-01:30" are supported. "closed" marks a non-trading day.
+  hoursWeekday String
+  hoursWeekend String
+
+  category Category @default(standard)
+
+  /// Owner/community confirmation that today's hours are accurate.
+  /// `verifiedAt` is the source of truth for the badge — a bare boolean
+  /// would keep claiming "verified today" months after the fact.
+  verifiedToday Boolean   @default(false)
+  verifiedAt    DateTime?
+
+  reviews Review[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([latitude, longitude])
+  @@index([category])
+  @@index([pincode])
+}
+
+model Review {
+  id     String @id @default(cuid())
+  shopId String
+  shop   Shop   @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  authorName String @default("Anonymous")
+  /// 1-5. Range enforced by Zod at the API boundary.
+  rating     Int
+  body       String
+
+  /// Dive bars only — the "best time to go, what to order, who to ask for"
+  /// content. Rejected server-side for other categories.
+  insiderTip String?
+
+  helpfulCount Int @default(0)
+
+  /// Salted hash of IP + user agent. Used only to rate-limit submissions and
+  /// stop trivial upvote stuffing; never displayed and not reversible.
+  submitterKey String?
+
+  createdAt DateTime @default(now())
+
+  @@index([shopId, createdAt])
+  @@index([submitterKey, createdAt])
+}
