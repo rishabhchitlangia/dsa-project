@@ -1,0 +1,18 @@
+{
+  "_comment": "Light moderation for a casual community. `blocked` terms reject a submission outright — keep this to slurs and targeted abuse, not ordinary swearing, which is part of how people actually talk about dive bars. Matching is case-insensitive, on word boundaries, after leetspeak normalisation. Edit freely; no code change needed.",
+  "blocked": [
+    "chutiya", "chutiye", "madarchod", "madarchood", "behenchod", "bhenchod",
+    "bhosdike", "bhosadike", "gaandu", "gandu", "randi", "haramkhor",
+    "faggot", "fag", "nigger", "nigga", "retard", "retarded", "tranny",
+    "chink", "paki", "spic", "kike", "coon", "dyke",
+    "rape", "rapist", "kill yourself", "kys"
+  ],
+  "_spam_comment": "Promotional phrases. This is a locator, not a shop — anyone offering delivery or sales in a review is spamming.",
+  "spamPhrases": [
+    "home delivery", "free delivery", "doorstep delivery", "order now",
+    "buy now", "whatsapp me", "whatsapp on", "dm me", "call me on",
+    "click here", "visit my", "best price", "cheapest rate", "discount code",
+    "promo code", "subscribe", "earn money", "work from home", "investment",
+    "crypto", "bitcoin", "loan", "casino", "betting", "satta"
+  ]
+}
