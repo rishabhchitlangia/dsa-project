@@ -18,6 +18,25 @@ enum Category {
   dive_bar
 }
 
+/// Where a listing came from. Drives how much we trust it and whether it
+/// can be overwritten by a re-import.
+enum ShopSource {
+  /// Hand-curated seed data.
+  curated
+  /// Imported from OpenStreetMap (ODbL).
+  osm
+  /// Submitted by a member of the public.
+  community
+}
+
+/// Community submissions are held until a human approves them; nothing
+/// anonymous appears on the public map on its own.
+enum ShopStatus {
+  pending
+  approved
+  rejected
+}
+
 model Shop {
   id       String @id @default(cuid())
   /// URL segment, e.g. /shop/gupta-wine-mart-bandra-west
@@ -34,10 +53,27 @@ model Shop {
 
   /// Free-form ranges, "HH:MM-HH:MM". Overnight ranges such as
   /// "17:00-01:30" are supported. "closed" marks a non-trading day.
-  hoursWeekday String
-  hoursWeekend String
+  ///
+  /// Null means genuinely unknown. Most OpenStreetMap entries carry no
+  /// opening_hours tag, and inventing plausible hours would poison exactly
+  /// the honesty the unverified badge exists to protect.
+  hoursWeekday String?
+  hoursWeekend String?
 
   category Category @default(standard)
+
+  source ShopSource @default(curated)
+  status ShopStatus @default(approved)
+
+  /// OpenStreetMap element id ("node/123", "way/456"). Lets a re-import
+  /// update the same row instead of duplicating it.
+  osmId String? @unique
+
+  /// Set only on community submissions.
+  submittedByName String?
+  submitterKey    String?
+  submittedNote   String?
+  reviewedAt      DateTime?
 
   /// Owner/community confirmation that today's hours are accurate.
   /// `verifiedAt` is the source of truth for the badge — a bare boolean
@@ -53,6 +89,8 @@ model Shop {
   @@index([latitude, longitude])
   @@index([category])
   @@index([pincode])
+  @@index([status])
+  @@index([status, category])
 }
 
 model Review {

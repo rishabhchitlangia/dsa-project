@@ -33,10 +33,14 @@ export const seedShopSchema = z.object({
     .min(MUMBAI_BOUNDS.minLng, "Longitude is outside Mumbai")
     .max(MUMBAI_BOUNDS.maxLng, "Longitude is outside Mumbai"),
   phone: z.string().trim().max(40).nullish(),
-  hoursWeekday: hoursSchema,
-  hoursWeekend: hoursSchema,
+  // Absent means genuinely unknown. Most imported listings have no hours,
+  // and inventing them would make the badge lie.
+  hoursWeekday: hoursSchema.nullish(),
+  hoursWeekend: hoursSchema.nullish(),
   category: categorySchema.default("standard"),
   verifiedToday: z.boolean().default(false),
+  source: z.enum(["curated", "osm", "community"]).default("curated"),
+  osmId: z.string().trim().min(1).nullish(),
 });
 
 export type SeedShop = z.infer<typeof seedShopSchema>;

@@ -11,17 +11,20 @@ const IST_TIMEZONE = "Asia/Kolkata";
 export type BadgeState = "open" | "verified_closed" | "unverified";
 
 export type ShopHours = {
-  hoursWeekday: string;
-  hoursWeekend: string;
+  /// Null means genuinely unknown, which is different from "closed".
+  hoursWeekday: string | null;
+  hoursWeekend: string | null;
 };
 
 export type OpenStatus = {
   state: BadgeState;
   label: string;
-  /** Null when the shop is closed today or hours are unparseable. */
+  /** Null when closed today, hours are unparseable, or none are recorded. */
   todayRange: string | null;
   isOpenNow: boolean;
   verifiedToday: boolean;
+  /** True when we hold no hours at all — say so rather than guess. */
+  hoursUnknown: boolean;
 };
 
 /** Current wall-clock time in Mumbai, as parts we can compare against hours. */
@@ -61,7 +64,12 @@ export function isWeekend(weekday: number): boolean {
 }
 
 export function rangeForDay(hours: ShopHours, weekday: number): string {
-  return isWeekend(weekday) ? hours.hoursWeekend : hours.hoursWeekday;
+  return (isWeekend(weekday) ? hours.hoursWeekend : hours.hoursWeekday) ?? "";
+}
+
+/** True when neither weekday nor weekend hours are recorded. */
+export function hasNoHours(hours: ShopHours): boolean {
+  return !hours.hoursWeekday?.trim() && !hours.hoursWeekend?.trim();
 }
 
 function toMinutes(hhmm: string): number | null {
@@ -154,12 +162,26 @@ export function getOpenStatus(
   const todayRange =
     rawRange && rawRange.toLowerCase() !== "closed" ? rawRange : null;
 
+  const hoursUnknown = hasNoHours(shop);
   const openNow = isOpenNow(shop, reference);
 
   // verifiedAt is authoritative; the boolean alone would never expire.
   const verified = shop.verifiedAt
     ? wasVerifiedToday(shop.verifiedAt, reference)
     : false;
+
+  // No hours on record: never claim open or closed, whatever the
+  // verification says. Most imported listings land here.
+  if (hoursUnknown) {
+    return {
+      state: "unverified",
+      label: "Hours not listed",
+      todayRange: null,
+      isOpenNow: false,
+      verifiedToday: verified,
+      hoursUnknown: true,
+    };
+  }
 
   if (verified && openNow) {
     return {
@@ -168,6 +190,7 @@ export function getOpenStatus(
       todayRange,
       isOpenNow: true,
       verifiedToday: true,
+      hoursUnknown: false,
     };
   }
   if (verified) {
@@ -177,6 +200,7 @@ export function getOpenStatus(
       todayRange,
       isOpenNow: false,
       verifiedToday: true,
+      hoursUnknown: false,
     };
   }
   return {
@@ -185,13 +209,17 @@ export function getOpenStatus(
     todayRange,
     isOpenNow: openNow,
     verifiedToday: false,
+    hoursUnknown: false,
   };
 }
 
 /** "10:00-22:30" -> "10:00 am – 10:30 pm" for display. */
-export function formatRange(range: string): string {
+export function formatRange(range: string | null | undefined): string {
+  // Unknown and closed are different facts and must read differently.
+  if (range === null || range === undefined) return "Not listed";
   const trimmed = range.trim();
-  if (!trimmed || trimmed.toLowerCase() === "closed") return "Closed";
+  if (!trimmed) return "Not listed";
+  if (trimmed.toLowerCase() === "closed") return "Closed";
   const [open, close] = trimmed.split("-");
   const fmt = (t: string) => {
     const mins = toMinutes(t ?? "");

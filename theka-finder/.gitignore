@@ -43,3 +43,6 @@ next-env.d.ts
 
 # Prisma generated client
 /src/generated
+
+# Raw importer output; merge into data/shops.json with `npm run import:osm -- --merge`
+/data/shops.osm.json

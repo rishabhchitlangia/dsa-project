@@ -22,11 +22,12 @@ const DATA_DIR = path.join(process.cwd(), "data");
 
 function resolveDataFile(): string {
   const preferred = path.join(DATA_DIR, "shops.json");
-  const fallback = path.join(DATA_DIR, "shops.sample.json");
+  const importOutput = path.join(DATA_DIR, "shops.osm.json");
   if (existsSync(preferred)) return preferred;
-  if (existsSync(fallback)) return fallback;
+  if (existsSync(importOutput)) return importOutput;
   throw new Error(
-    `No seed data found. Expected ${preferred} or ${fallback}.`,
+    `No seed data found. Expected ${preferred}.\n` +
+      `Run \`npm run import:osm -- --merge\` to fetch shops from OpenStreetMap.`,
   );
 }
 
@@ -107,19 +108,28 @@ async function main() {
         hoursWeekday: shop.hoursWeekday,
         hoursWeekend: shop.hoursWeekend,
         category: shop.category,
+        source: shop.source,
+        osmId: shop.osmId ?? null,
+        // Seeded rows are trusted; only public submissions start pending.
+        status: "approved" as const,
         verifiedToday: shop.verifiedToday,
         verifiedAt: shop.verifiedToday ? now : null,
       };
 
-      const existing = await prisma.shop.findUnique({
-        where: { slug },
-        select: { id: true },
-      });
-      await prisma.shop.upsert({
-        where: { slug },
-        create: { slug, ...fields },
-        update: fields,
-      });
+      // Match on the OSM id first so a renamed shop updates in place
+      // rather than becoming a second row under a new slug.
+      const existing = shop.osmId
+        ? await prisma.shop.findFirst({
+            where: { OR: [{ osmId: shop.osmId }, { slug }] },
+            select: { id: true },
+          })
+        : await prisma.shop.findUnique({ where: { slug }, select: { id: true } });
+
+      if (existing) {
+        await prisma.shop.update({ where: { id: existing.id }, data: { slug, ...fields } });
+      } else {
+        await prisma.shop.create({ data: { slug, ...fields } });
+      }
       if (existing) updated++;
       else created++;
     }

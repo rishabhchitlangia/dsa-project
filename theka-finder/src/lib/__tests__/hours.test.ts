@@ -131,3 +131,60 @@ test("formatRange renders 12-hour times", () => {
   assert.equal(formatRange("00:00-12:00"), "12:00 am – 12:00 pm");
   assert.equal(formatRange("closed"), "Closed");
 });
+
+test("no hours on record never claims open or closed", () => {
+  const unknown = { hoursWeekday: null, hoursWeekend: null };
+
+  assert.equal(isOpenNow(unknown, ist(MON, 12, 0)), false);
+
+  const status = getOpenStatus(
+    { ...unknown, verifiedToday: false, verifiedAt: null },
+    ist(MON, 12, 0),
+  );
+  assert.equal(status.hoursUnknown, true);
+  assert.equal(status.state, "unverified");
+  assert.equal(status.label, "Hours not listed");
+  assert.equal(status.todayRange, null);
+});
+
+test("unknown hours stay unknown even when verified today", () => {
+  // Someone can confirm a shop exists without knowing its hours. That must
+  // not turn into a green "Open now".
+  const status = getOpenStatus(
+    {
+      hoursWeekday: null,
+      hoursWeekend: null,
+      verifiedToday: true,
+      verifiedAt: ist(MON, 9, 0),
+    },
+    ist(MON, 12, 0),
+  );
+  assert.equal(status.state, "unverified");
+  assert.equal(status.hoursUnknown, true);
+  assert.equal(status.isOpenNow, false);
+});
+
+test("one side known, the other missing", () => {
+  // Weekday hours recorded, weekend not: Saturday must not inherit them.
+  const hours = { hoursWeekday: "10:00-22:00", hoursWeekend: null };
+
+  const mon = getOpenStatus(
+    { ...hours, verifiedToday: true, verifiedAt: ist(MON, 9, 0) },
+    ist(MON, 12, 0),
+  );
+  assert.equal(mon.state, "open", "weekday hours are known");
+
+  const sat = getOpenStatus(
+    { ...hours, verifiedToday: true, verifiedAt: ist(SAT, 9, 0) },
+    ist(SAT, 12, 0),
+  );
+  assert.equal(sat.hoursUnknown, false, "some hours are known");
+  assert.equal(sat.isOpenNow, false, "weekend hours are not recorded");
+  assert.equal(sat.todayRange, null);
+});
+
+test("formatRange distinguishes unknown from closed", () => {
+  assert.equal(formatRange(null), "Not listed");
+  assert.equal(formatRange(""), "Not listed");
+  assert.equal(formatRange("closed"), "Closed");
+});

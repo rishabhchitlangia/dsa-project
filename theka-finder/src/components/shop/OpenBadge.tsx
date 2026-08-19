@@ -35,6 +35,19 @@ export function OpenBadge({
     );
   }
 
+  if (status.hoursUnknown) {
+    return (
+      <Badge
+        tone="muted"
+        className={className}
+        title="We hold no opening hours for this shop"
+      >
+        <Dot className="bg-unverified" />
+        Hours not listed
+      </Badge>
+    );
+  }
+
   return (
     <Badge
       tone="muted"

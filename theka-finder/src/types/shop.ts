@@ -21,9 +21,10 @@ export type ShopSummary = {
   latitude: number;
   longitude: number;
   phone: string | null;
-  hoursWeekday: string;
-  hoursWeekend: string;
+  hoursWeekday: string | null;
+  hoursWeekend: string | null;
   category: CategoryValue;
+  source: "curated" | "osm" | "community";
   verifiedToday: boolean;
   verifiedAt: string | null;
   /** Null when the shop has no reviews yet. */

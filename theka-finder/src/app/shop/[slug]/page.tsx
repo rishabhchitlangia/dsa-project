@@ -135,11 +135,18 @@ export default async function ShopPage({
                   <dd className="text-text">{formatRange(shop.hoursWeekend)}</dd>
                 </div>
               </dl>
-              {!shop.status.verifiedToday && (
+              {shop.status.hoursUnknown ? (
                 <p className="mt-3 border-t border-border pt-3 text-xs leading-relaxed text-muted">
-                  Nobody has confirmed these today. They&apos;re
-                  community-reported, so call ahead if it matters.
+                  We don&apos;t have hours for this shop yet. Know them?
+                  Mention them in a review and we&apos;ll add them.
                 </p>
+              ) : (
+                !shop.status.verifiedToday && (
+                  <p className="mt-3 border-t border-border pt-3 text-xs leading-relaxed text-muted">
+                    Nobody has confirmed these today. They&apos;re
+                    community-reported, so call ahead if it matters.
+                  </p>
+                )
               )}
             </div>
 

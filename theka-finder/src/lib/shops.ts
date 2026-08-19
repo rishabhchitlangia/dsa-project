@@ -20,9 +20,10 @@ type ShopRow = {
   latitude: number;
   longitude: number;
   phone: string | null;
-  hoursWeekday: string;
-  hoursWeekend: string;
+  hoursWeekday: string | null;
+  hoursWeekend: string | null;
   category: string;
+  source: string;
   verifiedToday: boolean;
   verifiedAt: Date | null;
 };
@@ -66,6 +67,7 @@ function toSummary(
     hoursWeekday: row.hoursWeekday,
     hoursWeekend: row.hoursWeekend,
     category: row.category as CategoryValue,
+    source: row.source as ShopSummary["source"],
     verifiedToday: row.verifiedToday,
     verifiedAt: row.verifiedAt ? row.verifiedAt.toISOString() : null,
     averageRating:
@@ -95,7 +97,12 @@ export async function searchShops(params: SearchParams): Promise<{
   resolvedArea: string | null;
 }> {
   const limit = Math.min(params.limit ?? DEFAULT_RESULT_LIMIT, MAX_RESULT_LIMIT);
-  const categoryFilter = params.category ? { category: params.category } : {};
+  // Everything public is scoped to approved listings. Pending community
+  // submissions exist in the same table and must never leak into search.
+  const categoryFilter = {
+    status: "approved" as const,
+    ...(params.category ? { category: params.category } : {}),
+  };
 
   let center: [number, number] | null = null;
   let resolvedArea: string | null = null;
@@ -184,7 +191,7 @@ export async function listByCategory(
   category: CategoryValue,
 ): Promise<ShopSummary[]> {
   const rows = (await prisma.shop.findMany({
-    where: { category },
+    where: { category, status: "approved" },
     orderBy: { name: "asc" },
   })) as ShopRow[];
   const ratings = await ratingsFor(rows.map((r) => r.id));
@@ -222,7 +229,14 @@ function toReviewDTO(r: {
   };
 }
 
-export async function getShopBySlug(slug: string): Promise<ShopDetail | null> {
+/**
+ * `includePending` is for the admin review page only. Public callers must
+ * leave it off so unapproved listings stay invisible.
+ */
+export async function getShopBySlug(
+  slug: string,
+  { includePending = false }: { includePending?: boolean } = {},
+): Promise<ShopDetail | null> {
   const shop = await prisma.shop.findUnique({
     where: { slug },
     include: {
@@ -232,6 +246,7 @@ export async function getShopBySlug(slug: string): Promise<ShopDetail | null> {
     },
   });
   if (!shop) return null;
+  if (!includePending && shop.status !== "approved") return null;
 
   const reviews = shop.reviews.map(toReviewDTO);
   const rated = reviews.filter((r) => r.rating > 0);
@@ -257,6 +272,9 @@ export async function getShopBySlug(slug: string): Promise<ShopDetail | null> {
 }
 
 export async function allShopSlugs(): Promise<string[]> {
-  const rows = await prisma.shop.findMany({ select: { slug: true } });
+  const rows = await prisma.shop.findMany({
+    where: { status: "approved" },
+    select: { slug: true },
+  });
   return rows.map((r) => r.slug);
 }
