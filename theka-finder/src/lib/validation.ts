@@ -82,3 +82,63 @@ export const shopQuerySchema = z.object({
   category: categorySchema.optional(),
   limit: z.coerce.number().int().min(1).max(100).optional(),
 });
+
+/**
+ * A shop submitted by a member of the public. Deliberately forgiving:
+ * hours and phone are optional because someone standing outside a shop
+ * knows its name and where it is, and little else. Everything lands as
+ * pending, so a human sees it before it reaches the map.
+ */
+export const shopSubmissionSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(2, "Give the shop's name")
+    .max(120, "That name is too long"),
+  address: z
+    .string()
+    .trim()
+    .min(4, "Roughly where is it? A street or landmark is enough")
+    .max(300, "Keep the address shorter"),
+  area: z
+    .string()
+    .trim()
+    .min(2, "Pick a Mumbai neighbourhood")
+    .max(80),
+  pincode: z
+    .string()
+    .trim()
+    .regex(/^\d{6}$/, "Pincode must be 6 digits"),
+  latitude: z
+    .number()
+    .min(MUMBAI_BOUNDS.minLat, "That pin is outside Mumbai")
+    .max(MUMBAI_BOUNDS.maxLat, "That pin is outside Mumbai"),
+  longitude: z
+    .number()
+    .min(MUMBAI_BOUNDS.minLng, "That pin is outside Mumbai")
+    .max(MUMBAI_BOUNDS.maxLng, "That pin is outside Mumbai"),
+  phone: z
+    .string()
+    .trim()
+    .max(40)
+    .optional()
+    .transform((v) => (v && v.length > 0 ? v : undefined)),
+  hoursWeekday: hoursSchema.optional().or(z.literal("").transform(() => undefined)),
+  hoursWeekend: hoursSchema.optional().or(z.literal("").transform(() => undefined)),
+  /// What the submitter thinks it is. Only a suggestion — curation is manual.
+  suggestedCategory: categorySchema.default("standard"),
+  submittedByName: z
+    .string()
+    .trim()
+    .max(40, "Keep the name under 40 characters")
+    .optional()
+    .transform((v) => (v && v.length > 0 ? v : "Anonymous")),
+  note: z
+    .string()
+    .trim()
+    .max(500, "Keep the note under 500 characters")
+    .optional()
+    .transform((v) => (v && v.length > 0 ? v : undefined)),
+});
+
+export type ShopSubmissionInput = z.input<typeof shopSubmissionSchema>;

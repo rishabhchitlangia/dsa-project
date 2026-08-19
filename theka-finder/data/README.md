@@ -1,15 +1,17 @@
 # Data files
 
-## `shops.json` (yours) / `shops.sample.json` (placeholder)
+## `shops.json`
 
-The seed script reads `data/shops.json` if it exists, otherwise falls back to
-`data/shops.sample.json`. Drop your curated list in as `shops.json` and re-run
-`npm run seed` — nothing else needs to change.
+The live seed file, read by `npm run seed`. It currently holds 135 real
+Mumbai venues imported from OpenStreetMap.
 
-> **`shops.sample.json` is fictional.** Names, addresses and phone numbers are
-> invented placeholders for development only. Coordinates sit inside the right
-> neighbourhoods so the map looks realistic, but no listing corresponds to a
-> real business. Replace the whole file before showing this to anyone.
+Regenerate or extend it with `npm run import:osm -- --merge`, which adds
+venues not already present and never overwrites hand-edited rows. A plain
+`npm run import:osm` writes `shops.osm.json` instead, so you can diff before
+merging.
+
+Data © OpenStreetMap contributors, ODbL. Anything published from it must
+carry that attribution (the site footer already does).
 
 ### Format
 
@@ -23,11 +25,13 @@ An array of objects:
 | `pincode` | yes | 6 digits |
 | `latitude` / `longitude` | yes | Must fall inside the Mumbai bounding box |
 | `phone` | no | Any format; shown as a tap-to-call link |
-| `hoursWeekday` | yes | `"HH:MM-HH:MM"`, or `"closed"`. Overnight ranges like `"17:00-01:30"` are fine |
-| `hoursWeekend` | yes | Same format |
+| `hoursWeekday` | no | `"HH:MM-HH:MM"`, or `"closed"`. Overnight ranges like `"17:00-01:30"` are fine. Omit when genuinely unknown — the site shows "Hours not listed" rather than guessing |
+| `hoursWeekend` | no | Same format |
 | `category` | no | `standard` (default), `legendary`, or `dive_bar` |
 | `verifiedToday` | no | Defaults `false`. `true` stamps `verifiedAt` to seed time |
 | `slug` | no | Derived from name + area when omitted |
+| `source` | no | `curated` (default), `osm`, or `community` |
+| `osmId` | no | e.g. `"node/123"`. Lets a re-import update the row in place |
 
 Curation for `legendary` and `dive_bar` is manual — set the category here by
 hand. Nothing in the app promotes a shop into those sections automatically.

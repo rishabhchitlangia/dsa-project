@@ -84,7 +84,7 @@ function spamScore(text: string): { score: number; reason: string | null } {
   for (const phrase of SPAM_PHRASES) {
     if (lower.includes(phrase)) {
       score += 3;
-      reason ??= "This looks like a promotion. Reviews are for describing the place.";
+      reason ??= "This looks like a promotion rather than a description of the place.";
     }
   }
 

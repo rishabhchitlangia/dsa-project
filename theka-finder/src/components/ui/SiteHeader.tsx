@@ -33,6 +33,18 @@ export function SiteHeader({ active }: { active?: string }) {
               {item.label}
             </Link>
           ))}
+          <Link
+            href="/add"
+            // The label is visually hidden on narrow screens, so the link
+            // needs its own accessible name — otherwise it announces as
+            // nothing at all.
+            aria-label="Add a shop"
+            aria-current={active === "/add" ? "page" : undefined}
+            className="ml-1 whitespace-nowrap rounded-full bg-accent px-3 py-2 text-[13px] font-semibold text-white sm:text-sm"
+          >
+            <span aria-hidden>+</span>
+            <span className="ml-1 hidden sm:inline">Add</span>
+          </Link>
         </nav>
       </div>
     </header>

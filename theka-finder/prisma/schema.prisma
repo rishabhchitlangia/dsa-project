@@ -70,6 +70,9 @@ model Shop {
   osmId String? @unique
 
   /// Set only on community submissions.
+  /// What the submitter thought the place was. A hint for the curator,
+  /// never applied automatically — curation stays manual by design.
+  suggestedCategory Category?
   submittedByName String?
   submitterKey    String?
   submittedNote   String?
