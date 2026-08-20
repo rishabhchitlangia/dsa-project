@@ -43,6 +43,20 @@ npm run dev
 - **Supabase** — `postgresql://postgres:PASS@db-xxx.supabase.co:5432/postgres`
 - **Local** — `postgresql://user:pass@127.0.0.1:5432/theka_dev?schema=public`
 
+Use Neon's **direct** connection string (turn the pooling toggle off in the
+Connect dialog) — Prisma migrations do not run reliably through a pooler.
+
+### Neon connections
+
+`src/lib/db.ts` picks its driver from the hostname. A `*.neon.tech` URL uses
+Neon's HTTP endpoint on 443, which needs no connection setup and so suits
+serverless cold starts; anything else uses the normal Postgres wire protocol
+on 5432. The HTTP driver cannot do interactive transactions — nothing in
+this app uses them, and the code notes what to switch to if that changes.
+
+`prisma migrate deploy` always uses the wire protocol, so run migrations
+from somewhere with outbound 5432.
+
 ## Where the shop data comes from
 
 ```bash
