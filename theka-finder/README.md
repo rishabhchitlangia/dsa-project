@@ -96,8 +96,15 @@ would mean either wiping most columns monthly or breaching the terms — and
 it needs a billing account either way. OpenStreetMap is ODbL, which permits
 storage and redistribution with attribution.
 
-Everything imports as `standard`. Nothing is auto-promoted to `legendary` or
-`dive_bar` — curate those at `/admin`.
+Everything imports as `standard`. Nothing is auto-promoted — curate at
+`/admin`.
+
+`npm run tag:dive-bars` is a provisional shortcut: it tags anything named
+"… Bar & Restaurant" (Mumbai's permit-room naming convention) as a dive bar,
+so the section isn't empty before hand-curation happens. 233 places at last
+run. `--dry-run` previews, `--undo` reverts the lot, and any single row can
+be changed at `/admin`. Overture labels only two places in the whole city
+`dive_bar`, which is why the name is a better signal than the category.
 
 You can still hand-edit `data/shops.json`; the format is unchanged.
 

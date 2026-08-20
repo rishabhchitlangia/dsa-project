@@ -15,7 +15,8 @@
     "test": "tsx --test \"src/lib/__tests__/*.test.ts\"",
     "typecheck": "tsc --noEmit",
     "import:osm": "tsx scripts/import-osm.ts",
-    "import:overture": "tsx scripts/import-overture.ts"
+    "import:overture": "tsx scripts/import-overture.ts",
+    "tag:dive-bars": "tsx scripts/tag-dive-bars.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
