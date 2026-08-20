@@ -21,6 +21,7 @@ import { shopSlug } from "../src/lib/slug";
 import { haversineKm } from "../src/lib/geo";
 import { MUMBAI_BOUNDS } from "../src/lib/constants";
 import { AREAS, findArea, type Area } from "../src/lib/areas";
+import { isPlaceLabelNotBusiness } from "../src/lib/placeName";
 
 /**
  * Public Overpass instances, tried in order. They are volunteer-run and
@@ -163,6 +164,7 @@ function normalise(el: OsmElement): ImportedShop | null {
   const name = tags.name?.trim();
   // A listing nobody can name is not useful on a locator.
   if (!name) return null;
+  if (isPlaceLabelNotBusiness(name)) return null;
 
   const lat = el.lat ?? el.center?.lat;
   const lng = el.lon ?? el.center?.lon;

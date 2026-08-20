@@ -18,8 +18,10 @@ export function SiteFooter() {
           Maharashtra is subject to state law, including permit and minimum
           age requirements.
         </p>
-        <p className="mt-4 text-xs">
-          Map data ©{" "}
+        {/* Both upstream licences require attribution: ODbL for OSM,
+            CDLA-Permissive 2.0 for Overture. */}
+        <p className="mt-4 text-xs leading-relaxed">
+          Map tiles and some listings ©{" "}
           <a
             href="https://www.openstreetmap.org/copyright"
             className="underline hover:text-text"
@@ -28,7 +30,16 @@ export function SiteFooter() {
           >
             OpenStreetMap
           </a>{" "}
-          contributors.
+          contributors, ODbL. Listing data also from{" "}
+          <a
+            href="https://overturemaps.org"
+            className="underline hover:text-text"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Overture Maps Foundation
+          </a>
+          , CDLA-Permissive 2.0.
         </p>
       </div>
     </footer>

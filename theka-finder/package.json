@@ -14,7 +14,8 @@
     "postinstall": "prisma generate",
     "test": "tsx --test \"src/lib/__tests__/*.test.ts\"",
     "typecheck": "tsc --noEmit",
-    "import:osm": "tsx scripts/import-osm.ts"
+    "import:osm": "tsx scripts/import-osm.ts",
+    "import:overture": "tsx scripts/import-overture.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
@@ -30,6 +31,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@duckdb/node-api": "^1.5.5-r.4",
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
     "@types/leaflet": "^1.9.22",

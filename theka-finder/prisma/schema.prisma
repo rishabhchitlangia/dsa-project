@@ -25,6 +25,8 @@ enum ShopSource {
   curated
   /// Imported from OpenStreetMap (ODbL).
   osm
+  /// Imported from Overture Maps (CDLA-Permissive 2.0).
+  overture
   /// Submitted by a member of the public.
   community
 }
@@ -68,6 +70,9 @@ model Shop {
   /// OpenStreetMap element id ("node/123", "way/456"). Lets a re-import
   /// update the same row instead of duplicating it.
   osmId String? @unique
+
+  /// Overture Maps GERS id, same purpose.
+  overtureId String? @unique
 
   /// Set only on community submissions.
   /// What the submitter thought the place was. A hint for the curator,

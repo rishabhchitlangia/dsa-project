@@ -39,8 +39,9 @@ export const seedShopSchema = z.object({
   hoursWeekend: hoursSchema.nullish(),
   category: categorySchema.default("standard"),
   verifiedToday: z.boolean().default(false),
-  source: z.enum(["curated", "osm", "community"]).default("curated"),
+  source: z.enum(["curated", "osm", "overture", "community"]).default("curated"),
   osmId: z.string().trim().min(1).nullish(),
+  overtureId: z.string().trim().min(1).nullish(),
 });
 
 export type SeedShop = z.infer<typeof seedShopSchema>;

@@ -7,8 +7,8 @@
  */
 import { readFileSync, existsSync } from "node:fs";
 import path from "node:path";
-import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
+import { createAdapter } from "../src/lib/adapter";
 import { seedFileSchema } from "../src/lib/validation";
 import { shopSlug } from "../src/lib/slug";
 
@@ -86,9 +86,7 @@ async function main() {
     );
   }
 
-  const prisma = new PrismaClient({
-    adapter: new PrismaPg({ connectionString }),
-  });
+  const prisma = new PrismaClient({ adapter: createAdapter(connectionString) });
 
   try {
     const now = new Date();
@@ -110,20 +108,25 @@ async function main() {
         category: shop.category,
         source: shop.source,
         osmId: shop.osmId ?? null,
+        overtureId: shop.overtureId ?? null,
         // Seeded rows are trusted; only public submissions start pending.
         status: "approved" as const,
         verifiedToday: shop.verifiedToday,
         verifiedAt: shop.verifiedToday ? now : null,
       };
 
-      // Match on the OSM id first so a renamed shop updates in place
+      // Match on the upstream id first so a renamed shop updates in place
       // rather than becoming a second row under a new slug.
-      const existing = shop.osmId
-        ? await prisma.shop.findFirst({
-            where: { OR: [{ osmId: shop.osmId }, { slug }] },
-            select: { id: true },
-          })
-        : await prisma.shop.findUnique({ where: { slug }, select: { id: true } });
+      const identity = [
+        shop.osmId ? { osmId: shop.osmId } : null,
+        shop.overtureId ? { overtureId: shop.overtureId } : null,
+        { slug },
+      ].filter((c): c is NonNullable<typeof c> => c !== null);
+
+      const existing = await prisma.shop.findFirst({
+        where: { OR: identity },
+        select: { id: true },
+      });
 
       if (existing) {
         await prisma.shop.update({ where: { id: existing.id }, data: { slug, ...fields } });

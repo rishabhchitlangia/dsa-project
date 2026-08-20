@@ -10,8 +10,17 @@ venues not already present and never overwrites hand-edited rows. A plain
 `npm run import:osm` writes `shops.osm.json` instead, so you can diff before
 merging.
 
-Data © OpenStreetMap contributors, ODbL. Anything published from it must
-carry that attribution (the site footer already does).
+Two upstream sources, both permitting storage and redistribution with
+attribution (the site footer carries both):
+
+- **Overture Maps** (`npm run import:overture -- --merge`) — CDLA-Permissive
+  2.0. The bulk of the data; roughly ten times OpenStreetMap's coverage of
+  Mumbai retail, with street addresses and phone numbers on most records.
+- **OpenStreetMap** (`npm run import:osm -- --merge`) — ODbL. Fewer records
+  but occasionally carries `opening_hours`, which Overture does not have
+  at all.
+
+Run both; each skips places the other already imported.
 
 ### Format
 
@@ -30,8 +39,9 @@ An array of objects:
 | `category` | no | `standard` (default), `legendary`, or `dive_bar` |
 | `verifiedToday` | no | Defaults `false`. `true` stamps `verifiedAt` to seed time |
 | `slug` | no | Derived from name + area when omitted |
-| `source` | no | `curated` (default), `osm`, or `community` |
+| `source` | no | `curated` (default), `osm`, `overture`, or `community` |
 | `osmId` | no | e.g. `"node/123"`. Lets a re-import update the row in place |
+| `overtureId` | no | Overture GERS id, same purpose |
 
 Curation for `legendary` and `dive_bar` is manual — set the category here by
 hand. Nothing in the app promotes a shop into those sections automatically.

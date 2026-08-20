@@ -10,7 +10,9 @@ MVP. Public locator, reviews, community submissions and a curator review
 queue are complete. No login yet — the WhatsApp-based owner update flow is
 a separate phase.
 
-Seeded with **135 real Mumbai venues from OpenStreetMap**.
+Seeded with **1,244 real Mumbai venues** — 190 bottle shops and ~1,050 bars
+and permit rooms — from Overture Maps and OpenStreetMap. All 65 catalogued
+neighbourhoods have listings.
 
 ## Stack
 
@@ -60,10 +62,20 @@ from somewhere with outbound 5432.
 ## Where the shop data comes from
 
 ```bash
-npm run import:osm            # writes data/shops.osm.json
-npm run import:osm -- --merge # merges new venues into data/shops.json
-npm run seed                  # loads data/shops.json into Postgres
+npm run import:overture -- --merge  # the bulk of the data
+npm run import:osm -- --merge       # adds what OSM has and Overture doesn't
+npm run seed                        # loads data/shops.json into Postgres
 ```
+
+**Overture Maps** (CDLA-Permissive 2.0) is the primary source: roughly ten
+times OpenStreetMap's coverage of Mumbai retail, with street addresses on
+94% of records and phone numbers on 84%. Queried straight off the public S3
+bucket with DuckDB over HTTP range requests, so only the relevant row groups
+are fetched rather than the whole planet.
+
+**OpenStreetMap** (ODbL) adds fewer records but occasionally carries
+`opening_hours`, which Overture has none of. Each importer skips places the
+other already brought in.
 
 The importer queries [Overpass](https://overpass-api.de/) for
 `shop=alcohol`, `shop=wine`, `shop=beverages`, `amenity=bar` and
@@ -71,6 +83,9 @@ The importer queries [Overpass](https://overpass-api.de/) for
 volunteer-run and frequently return 503 or an empty database, so it rotates
 four of them with backoff and refuses mirrors that answer 200 from an empty
 dataset.
+
+Neither source has meaningful opening hours — 22 of 1,244 shops. That gap is
+what the community verification flow exists to close.
 
 **Why not Google Places.** Google's
 [Maps Platform terms](https://cloud.google.com/maps-platform/terms/maps-service-terms)
@@ -178,6 +193,15 @@ for MVP testing but its
 [usage policy](https://operations.osmfoundation.org/policies/tiles/)
 discourages production traffic. `TILE_URL` in `src/lib/constants.ts` is the
 single line to change when you move to another free tile host.
+
+## A note on the excise register
+
+Maharashtra State Excise licenses every liquor shop in the state, which
+would be the authoritative list. They do not publish one. The only public
+endpoint is a CAPTCHA-gated licensee *authentication* form that requires a
+licence number you already hold — it verifies one licensee, it cannot
+enumerate them. An RTI request is the legitimate route to that data if you
+ever want it.
 
 ## Not built yet
 
