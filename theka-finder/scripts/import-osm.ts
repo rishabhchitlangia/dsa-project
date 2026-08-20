@@ -144,12 +144,16 @@ function nearestArea(lat: number, lng: number): Area {
   return best;
 }
 
-function buildAddress(tags: Record<string, string>): string {
+function buildAddress(tags: Record<string, string>, area: string): string {
+  const areaKey = area.trim().toLowerCase();
   const parts = [
     tags["addr:housename"],
     [tags["addr:housenumber"], tags["addr:street"]].filter(Boolean).join(" "),
     tags["addr:neighbourhood"],
-  ].filter((p): p is string => Boolean(p && p.trim()));
+  ]
+    .filter((p): p is string => Boolean(p && p.trim()))
+    // Drop any segment that just repeats the area; the UI appends it.
+    .filter((p) => p.trim().toLowerCase() !== areaKey);
 
   return parts.join(", ").trim();
 }
@@ -183,7 +187,7 @@ function normalise(el: OsmElement): ImportedShop | null {
     : area.pincodes[0];
 
   const hours = parseOpeningHours(tags.opening_hours);
-  const address = buildAddress(tags);
+  const address = buildAddress(tags, area.name);
 
   return {
     name,

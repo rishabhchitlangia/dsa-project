@@ -2,7 +2,7 @@ import Link from "next/link";
 import { OpenBadge } from "./OpenBadge";
 import { RatingBadge } from "./RatingBadge";
 import { CategoryTag } from "./CategoryTag";
-import { formatDistance } from "@/lib/geo";
+import { formatDistance, formatLocation } from "@/lib/geo";
 import { formatRange } from "@/lib/hours";
 import type { ShopSummary } from "@/types/shop";
 
@@ -40,7 +40,7 @@ export function ShopCard({
             </Link>
           </h3>
           <p className="mt-0.5 truncate text-sm text-muted">
-            {shop.address}, {shop.area}
+            {formatLocation(shop.address, shop.area)}
           </p>
         </div>
         {shop.distanceKm !== undefined && (

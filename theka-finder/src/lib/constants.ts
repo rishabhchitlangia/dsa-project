@@ -13,11 +13,13 @@ export const FOCUSED_ZOOM = 14;
 
 /**
  * Tile source. OpenStreetMap's public tiles need no key, which keeps MVP
- * testing free. Their usage policy discourages production traffic, so this
- * is the single constant to change when swapping to another free tile host.
+ * testing free. Their usage policy discourages production traffic, so set
+ * NEXT_PUBLIC_TILE_URL to move to another host without a code change.
  * https://operations.osmfoundation.org/policies/tiles/
  */
-export const TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+export const TILE_URL =
+  process.env.NEXT_PUBLIC_TILE_URL ??
+  "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
 export const TILE_ATTRIBUTION =
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 

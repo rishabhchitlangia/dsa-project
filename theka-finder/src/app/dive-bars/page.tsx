@@ -8,6 +8,7 @@ import { OpenBadge } from "@/components/shop/OpenBadge";
 import { Stars } from "@/components/shop/Stars";
 import { InsiderTip } from "@/components/review/InsiderTip";
 import { formatRange } from "@/lib/hours";
+import { formatLocation } from "@/lib/geo";
 import type { ShopSummary } from "@/types/shop";
 
 export const dynamic = "force-dynamic";
@@ -102,7 +103,7 @@ function DiveBarCard({
               </Link>
             </h2>
             <p className="mt-1 text-sm text-muted">
-              {shop.address}, {shop.area}
+              {formatLocation(shop.address, shop.area)}
             </p>
           </div>
           <OpenBadge status={shop.status} className="shrink-0" />

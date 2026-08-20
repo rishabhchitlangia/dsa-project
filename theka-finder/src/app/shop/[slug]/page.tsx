@@ -11,6 +11,7 @@ import { ShopReviews } from "@/components/shop/ShopReviews";
 import { InsiderTip } from "@/components/review/InsiderTip";
 import { ShopLocationMap } from "@/components/map/ShopLocationMap";
 import { formatRange } from "@/lib/hours";
+import { formatLocation } from "@/lib/geo";
 
 export const dynamic = "force-dynamic";
 
@@ -69,7 +70,7 @@ export default async function ShopPage({
           </h1>
 
           <p className="mt-1.5 text-sm text-muted">
-            {shop.address}, {shop.area} {shop.pincode}
+            {formatLocation(shop.address, shop.area)} {shop.pincode}
           </p>
 
           {shop.averageRating !== null && (

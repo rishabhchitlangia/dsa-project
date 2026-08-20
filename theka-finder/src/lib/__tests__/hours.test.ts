@@ -188,3 +188,19 @@ test("formatRange distinguishes unknown from closed", () => {
   assert.equal(formatRange(""), "Not listed");
   assert.equal(formatRange("closed"), "Closed");
 });
+
+test("location formatting never repeats the area", async () => {
+  const { formatLocation } = await import("../geo");
+  assert.equal(formatLocation("12 Hill Road", "Bandra West"), "12 Hill Road, Bandra West");
+  // The OSM importer falls back to the area name when there is no street.
+  assert.equal(formatLocation("Nariman Point", "Nariman Point"), "Nariman Point");
+  assert.equal(formatLocation("nariman point", "Nariman Point"), "Nariman Point");
+  assert.equal(formatLocation("   ", "Powai"), "Powai");
+
+  // OSM often tags addr:neighbourhood with the same name as the area.
+  assert.equal(
+    formatLocation("Gaspar Enclave, Dr Ambedkar Road, Bandra West", "Bandra West"),
+    "Gaspar Enclave, Dr Ambedkar Road, Bandra West",
+  );
+  assert.equal(formatLocation("Bandra West, Bandra West", "Bandra West"), "Bandra West");
+});

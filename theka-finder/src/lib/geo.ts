@@ -52,3 +52,21 @@ export function formatDistance(km: number): string {
   if (km < 10) return `${km.toFixed(1)} km`;
   return `${Math.round(km)} km`;
 }
+
+/**
+ * "12 Hill Road, Bandra West" — but never "Bandra West, Bandra West".
+ *
+ * Many OpenStreetMap entries carry no street address, so the importer falls
+ * back to the area name; others tag `addr:neighbourhood` with the same name
+ * as the area. Both would otherwise print the area twice.
+ */
+export function formatLocation(address: string, area: string): string {
+  const areaKey = area.trim().toLowerCase();
+
+  const parts = address
+    .split(",")
+    .map((p) => p.trim())
+    .filter((p) => p && p.toLowerCase() !== areaKey);
+
+  return parts.length > 0 ? `${parts.join(", ")}, ${area}` : area;
+}
