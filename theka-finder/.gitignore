@@ -46,3 +46,6 @@ next-env.d.ts
 
 # Raw importer output; merge into data/shops.json with `npm run import:osm -- --merge`
 /data/shops.osm.json
+
+# Local one-off scripts
+/neon-apply.mjs
