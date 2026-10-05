@@ -59,6 +59,32 @@
 
   function preload(card) { var img = new Image(); img.decoding = 'async'; img.src = T.art.imageUrl(card); }
 
+  // Inside the claude.ai viewer, files go through its downloads capability (the viewer confirms
+  // each save). Anywhere else there is no window.claude, so a normal browser download is used.
+  var downloadsReady = window.claude && typeof window.claude.use === 'function'
+    ? window.claude.use('downloads').catch(function () { return null; })
+    : Promise.resolve(null);
+
+  // Resolves 'saved', 'declined' or 'failed'.
+  function offerDownload(filename, data) {
+    return downloadsReady.then(function (dl) {
+      if (dl) {
+        return dl.save({ filename: filename, data: data }).then(function () { return 'saved'; }, function (err) {
+          return err && err.code === 'declined' ? 'declined' : 'failed';
+        });
+      }
+      try {
+        var blob = data instanceof Blob ? data : new Blob([data], { type: 'application/json' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
+        return 'saved';
+      } catch (e) { return 'failed'; }
+    });
+  }
+
   /* ================= card elements ================= */
 
   // entry: {card, reversed} or null for a plain card back.
@@ -289,7 +315,8 @@
     layout.innerHTML = '';
     state.spread.positions.forEach(function (p, i) {
       var slot = document.createElement('div');
-      slot.className = 'slot' + (p.crossing ? ' is-crossing' : '');
+      var crossed = state.spread.positions.some(function (q) { return q.crossing && q !== p && q.x === p.x && q.y === p.y; });
+      slot.className = 'slot' + (p.crossing ? ' is-crossing' : '') + (crossed ? ' is-crossed' : '');
       slot.dataset.index = i;
       slot.innerHTML = '<span class="slot-num" aria-hidden="true">' + (i + 1) + '</span><span class="slot-name" aria-hidden="true">' + p.name + '</span>';
       layout.appendChild(slot);
@@ -1013,15 +1040,15 @@
       summary: buildSummary(state.reading, state.drawn, state.opts),
       date: state.date
     }).then(function (blob) {
-      var url = URL.createObjectURL(blob);
       var name = 'tarot-' + localDateKey(new Date(state.date)) + '-' + state.spread.id + '.png';
-      var a = document.createElement('a');
-      a.href = url; a.download = name;
-      document.body.appendChild(a); a.click(); a.remove();
-      $('#export-preview').innerHTML = '<img alt="Your reading as an image" src="' + url + '">';
-      var link = $('#export-link'); link.href = url; link.download = name;
-      status.textContent = 'Image saved.';
-      openModal('#export-modal');
+      return offerDownload(name, blob).then(function (result) {
+        if (result === 'saved') { status.textContent = 'Image saved.'; return; }
+        if (result === 'declined') { status.textContent = 'Image not saved.'; return; }
+        // Downloads unavailable: show the image so it can be saved by hand.
+        $('#export-preview').innerHTML = '<img alt="Your reading as an image" src="' + URL.createObjectURL(blob) + '">';
+        status.textContent = '';
+        openModal('#export-modal');
+      });
     }).catch(function () {
       status.textContent = 'The image could not be created in this browser.';
     }).then(function () { btn.disabled = false; });
@@ -1244,20 +1271,17 @@
     var data = { app: 'seventy-eight', version: 1, exported: new Date().toISOString(), readings: list };
     var json = JSON.stringify(data, null, 2);
     var status = $('#history-status');
-    try {
-      var url = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
-      var a = document.createElement('a');
-      a.href = url; a.download = 'tarot-readings-' + localDateKey(new Date()) + '.json';
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
-    } catch (e) { /* download blocked */ }
-    status.innerHTML = 'Exported ' + list.length + (list.length === 1 ? ' reading. ' : ' readings. ') +
-      '<button type="button" class="link-btn" id="copy-json-btn">Copy as text instead</button>';
-    $('#copy-json-btn').addEventListener('click', function () {
+    offerDownload('tarot-readings-' + localDateKey(new Date()) + '.json', json).then(function (result) {
+      var lead = result === 'saved' ? 'Exported ' + list.length + (list.length === 1 ? ' reading. ' : ' readings. ')
+        : result === 'declined' ? 'Export cancelled. ' : 'Downloads aren’t available here. ';
+      status.innerHTML = esc(lead) + '<button type="button" class="link-btn" id="copy-json-btn">Copy as text instead</button>';
+      $('#copy-json-btn').addEventListener('click', copyJson);
+    });
+    function copyJson() {
       var done = function (ok) { status.textContent = ok ? 'Copied. Paste it into a text file to keep it.' : 'Copying is blocked in this browser.'; };
       if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(json).then(function () { done(true); }, function () { done(false); });
       else done(false);
-    });
+    }
   }
 
   function importHistory(file) {

@@ -342,6 +342,8 @@ button.tcard { cursor: pointer; }
 }
 .layout.is-visible .slot { border-color: var(--muted); }
 .slot.is-crossing { transform: rotate(90deg); z-index: 3; }
+/* the card under the crossing card shows its number at the top, clear of the crossing slot */
+.slot.is-crossed { align-content: start; padding-top: 6px; }
 .slot-num { font-family: var(--serif); color: var(--accent); font-size: clamp(0.9rem, calc(var(--cw) * 0.24), 1.5rem); line-height: 1; }
 .slot-name { font-size: clamp(0.5625rem, calc(var(--cw) * 0.1), 0.75rem); color: var(--muted); padding: 0 4px; line-height: 1.2; }
 .slot.is-crossing .slot-num { transform: rotate(-90deg); }
