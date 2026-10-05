@@ -11,9 +11,9 @@ A static, dependency-free tarot site. Serve the folder with any static server
 3. **Cut** – the deck splits into three piles; you choose which goes on top.
 4. **Draw** – the deck fans out face down; pick each card by hand (mouse, touch, or arrow keys and Enter).
 5. **Reveal** – turn cards one at a time or all in order.
-6. **Read** – the reading is laid out as an article: question, the spread in miniature,
-   a short plain-language summary, then each card in its own section, followed by
-   patterns, connections, the quintessence and your notes.
+6. **Read** – the reading is laid out as an article: the question, the spread in miniature and
+   the short answer, then the story of the spread, each card in its own section, patterns worth
+   noticing and a conclusion, followed by follow-up questions and your notes.
 
 Spreads: One Card, Past · Present · Future, Situation · Action · Outcome,
 Relationship (6), Horseshoe (7) and the Celtic Cross (10).
@@ -40,7 +40,7 @@ share links, so reopening a reading never asks Claude again.
 
 - **Copy link** encodes the whole reading (spread, question, cards, orientations, options, date)
   into the URL hash. Opening the link shows the finished reading directly.
-- **Save as image** renders the question, spread and summary to a PNG.
+- **Save as image** renders the question, spread and short answer to a PNG.
 - **Past readings** are kept in the browser (`localStorage`). Each reading can carry a note
   ("what actually happened"), can be deleted, and the whole journal can be exported to JSON and
   imported again on another device; imports merge without duplicates.
@@ -74,7 +74,7 @@ resized to 400px wide and saved as WebP (40–60 KB each). Names follow the deck
 ## Files
 
 - `index.html` – page structure
-- `css/style.css` – all styling (light and dark themes)
+- `css/style.css` – all styling (dark theme, brass accent)
 - `js/deck.js` – the 78 cards: meanings, keywords, elements, astrology
 - `js/spreads.js` – spread layouts, adjacency and position pairs
 - `js/engine.js` – shuffle, cut, the interpretation engine and the reading payload
