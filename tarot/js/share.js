@@ -67,8 +67,8 @@
   /* ---------- image ---------- */
 
   var C = {
-    bg: '#F6F3EE', text: '#1C1B19', muted: '#6B665E', hairline: '#E4DED4',
-    accent: '#7A2E2E', paper: '#FBF8F2', ink: '#2A2724'
+    bg: '#0E0E0F', text: '#ECE6DA', muted: '#8F8A80', hairline: '#2A2A2C',
+    accent: '#B8975A', paper: '#F3EEE3', ink: '#1C1B19'
   };
   var SERIF = '"Cormorant Garamond", Garamond, "Times New Roman", serif';
   var SANS = 'Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif';
@@ -116,7 +116,7 @@
     ctx.save();
     ctx.translate(cx, cy);
     if (rotate) ctx.rotate(Math.PI / 2);
-    ctx.shadowColor = 'rgba(0,0,0,.08)';
+    ctx.shadowColor = 'rgba(0,0,0,.35)';
     ctx.shadowBlur = 18; ctx.shadowOffsetY = 6;
     roundRect(ctx, -w / 2, -h / 2, w, h, 7);
     ctx.fillStyle = C.paper; ctx.fill();
@@ -190,7 +190,10 @@
       ctx.fillStyle = C.text;
       var label = d.card.name + (d.reversed ? ' (reversed)' : '');
       var room = colW - (nameX - x) - 16;
-      while (ctx.measureText(label).width > room && label.length > 4) label = label.slice(0, -2);
+      if (ctx.measureText(label).width > room) {
+        while (ctx.measureText(label + '…').width > room && label.length > 4) label = label.slice(0, -1);
+        label = label.replace(/[\s(]+$/, '') + '…';
+      }
       ctx.fillText(label, nameX, ly);
     });
     y += listRows * 34 + 40;

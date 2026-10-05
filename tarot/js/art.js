@@ -9,10 +9,10 @@
   var W = 200, H = 330;
 
   var PALETTE = {
-    paper: '#FBF8F2',
-    ink: '#2A2724',
-    soft: '#6B665E',
-    accent: '#7A2E2E',
+    paper: '#F3EEE3',
+    ink: '#1C1B19',
+    soft: '#5F5A52',
+    brass: '#B8975A',
     fire: '#9A4A3A',
     water: '#3E5A6B',
     air: '#8A7A4E',
@@ -99,7 +99,7 @@
     var body = '';
     if (card.arcana === 'major') {
       body = '<circle cx="100" cy="158" r="50" fill="' + PALETTE.ink + '"/>' +
-        '<circle cx="100" cy="158" r="56" fill="none" stroke="' + PALETTE.accent + '" stroke-width="1"/>' +
+        '<circle cx="100" cy="158" r="56" fill="none" stroke="' + PALETTE.brass + '" stroke-width="1"/>' +
         '<text x="100" y="176" text-anchor="middle" font-family="Segoe UI Symbol, Noto Sans Symbols, Apple Symbols, DejaVu Sans, serif" font-size="48" fill="' + PALETTE.paper + '">' + card.glyph + '︎</text>' +
         text(100, 240, 13, card.astrology, { italic: true, fill: PALETTE.soft });
     } else if (card.court) {
@@ -130,9 +130,9 @@
 
   /* ---------- card back: rotationally symmetric, so reversals stay hidden ---------- */
 
-  var BACK_COLOR = '#7A2E2E';
+  var BACK_COLOR = '#0E0E0F';
   function backSvg() {
-    var line = 'rgba(251,248,242,.55)';
+    var line = PALETTE.brass;
     return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 330">' +
       '<rect width="200" height="330" fill="' + BACK_COLOR + '"/>' +
       '<rect x="12" y="12" width="176" height="306" rx="4" fill="none" stroke="' + line + '" stroke-width="1"/>' +
