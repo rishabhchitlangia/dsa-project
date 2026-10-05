@@ -78,6 +78,7 @@ resized to 400px wide and saved as WebP (40–60 KB each). Names follow the deck
 - `js/deck.js` – the 78 cards: meanings, keywords, elements, astrology
 - `js/spreads.js` – spread layouts, adjacency and position pairs
 - `js/engine.js` – shuffle, cut, the interpretation engine and the reading payload
+- `js/lore.js` – card knowledge for the reader: readings per orientation by topic and role, and a tone score
 - `js/reader.js` – the reader: Claude prompt and calls, markdown parsing and the rule-based fallback
 - `js/art.js` – image paths, the fallback SVG faces and the card back
 - `js/fx.js` – synthesised sound (off by default)
