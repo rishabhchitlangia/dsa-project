@@ -373,7 +373,86 @@
     return parts;
   }
 
+  /* ---------- reading payload: the facts a reader works from, no prose ---------- */
+
+  var RANK_WORDS = { 1: 'Aces', 11: 'Pages', 12: 'Knights', 13: 'Queens', 14: 'Kings' };
+  var DIGNITY_EFFECT = {
+    strong: 'strengthened by its neighbours',
+    weak: 'weakened by its neighbours',
+    mixed: 'pulled both ways by its neighbours',
+    neutral: 'unaffected by its neighbours'
+  };
+
+  function buildPayload(spread, cards, opts) {
+    opts = opts || {};
+    var n = cards.length;
+    var payloadCards = cards.map(function (c, i) {
+      var pos = spread.positions[i];
+      var o = orient(c);
+      var dig = opts.dignities ? dignityFor(i, cards, spread.links) : null;
+      return {
+        number: i + 1,
+        position: pos.name,
+        positionMeaning: pos.question,
+        card: c.card.name,
+        id: c.card.id,
+        arcana: c.card.arcana,
+        suit: c.card.suit || null,
+        orientation: c.reversed ? 'reversed' : 'upright',
+        keywords: c.card.keywords[o].slice(),
+        meaning: c.card.meaning[o],
+        element: ELEMENTS[c.card.element].name,
+        dignity: dig ? {
+          state: dig.state,
+          effect: DIGNITY_EFFECT[dig.state],
+          neighbours: dig.detail.map(function (d) {
+            return { number: d.index + 1, card: cards[d.index].card.name, relation: d.rel };
+          })
+        } : null
+      };
+    });
+
+    var suitCount = { wands: 0, cups: 0, swords: 0, pentacles: 0 };
+    var elemCount = { fire: 0, water: 0, air: 0, earth: 0 };
+    var rankCount = {};
+    var majors = 0, reversed = 0, courts = [];
+    cards.forEach(function (c) {
+      elemCount[c.card.element]++;
+      if (c.reversed) reversed++;
+      if (c.card.arcana === 'major') { majors++; return; }
+      suitCount[c.card.suit]++;
+      rankCount[c.card.rank] = (rankCount[c.card.rank] || 0) + 1;
+      if (c.card.court) courts.push(c.card.name);
+    });
+    var suits = Object.keys(suitCount).sort(function (a, b) { return suitCount[b] - suitCount[a]; });
+    var elems = Object.keys(elemCount).sort(function (a, b) { return elemCount[b] - elemCount[a]; });
+    var repeated = Object.keys(rankCount).filter(function (r) { return rankCount[r] >= 2; }).map(function (r) {
+      r = +r;
+      return { rank: r, count: rankCount[r], label: RANK_WORDS[r] || (r + 's'), theme: NUMBER_THEMES[r] };
+    });
+
+    return {
+      question: opts.question || '',
+      spread: spread.name,
+      spreadId: spread.id,
+      cardCount: n,
+      options: { reversals: !!opts.reversals, dignities: !!opts.dignities },
+      cards: payloadCards,
+      patterns: {
+        majors: majors,
+        dominantSuit: n - majors >= 2 && suitCount[suits[0]] >= 2 && suitCount[suits[0]] > suitCount[suits[1]] ? T.SUITS[suits[0]].name : null,
+        suitCounts: suitCount,
+        dominantElement: elemCount[elems[0]] > elemCount[elems[1]] ? ELEMENTS[elems[0]].name : null,
+        missingElements: n >= 4 ? Object.keys(elemCount).filter(function (e) { return !elemCount[e]; }).map(function (e) { return ELEMENTS[e].name; }) : [],
+        reversals: reversed,
+        repeatedNumbers: repeated,
+        courts: courts
+      }
+    };
+  }
+
   T.engine = {
+    buildPayload: buildPayload,
     newDeck: newDeck,
     shuffle: shuffle,
     cut: cut,

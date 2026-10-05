@@ -380,8 +380,34 @@ button.tcard { cursor: pointer; }
 .reading.is-standalone { margin-top: 0; border-top: 0; padding-top: 48px; }
 .reading-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 32px 56px; align-items: start; }
 .reading-head h2 { font-size: var(--fs-h2); font-weight: 400; font-style: italic; max-width: 22ch; margin-bottom: 20px; }
-.reading-summary { font-size: 1.1875rem; line-height: 1.6; max-width: 60ch; }
-.reading-summary p + p { margin-top: 10px; }
+.reading-head-main { min-width: 0; }
+/* the short answer: the one thing to read first */
+.short-answer { max-width: 50ch; padding-left: 22px; border-left: 2px solid var(--text); }
+.short-answer .eyebrow { margin-bottom: 8px; }
+.short-answer p:not(.eyebrow) { font-family: var(--serif); font-size: clamp(1.45rem, 2.6vw, 1.85rem); line-height: 1.3; }
+.short-answer p + p { margin-top: 10px; }
+.short-answer strong { font-weight: 500; }
+
+.reader { display: grid; gap: 56px; }
+.reader[aria-busy="true"] .reader-status { min-height: 1.6em; }
+.reader-status:empty { display: none; }
+.reader-wait, .reader-note { color: var(--muted); font-size: var(--fs-ui); }
+.prose { display: grid; gap: 12px; max-width: 65ch; }
+.prose ul { margin: 0; padding-left: 1.1em; display: grid; gap: 10px; }
+.prose li::marker { color: var(--muted); }
+.prose strong { font-weight: 600; }
+.reader-cards { display: grid; gap: 20px; }
+.reader-cards > h3 { font-size: var(--fs-h3); }
+.entry-title { font-size: 1.75rem; }
+
+.followups { display: grid; gap: 16px; max-width: 760px; }
+.followups h3 { font-size: var(--fs-h3); }
+.fu-list { display: grid; gap: 20px; }
+.fu-list:empty { display: none; }
+.fu-item { display: grid; gap: 8px; padding-left: 16px; border-left: 1px solid var(--hairline); }
+.fu-q { font-family: var(--serif); font-style: italic; font-size: 1.3rem; line-height: 1.3; }
+.fu-form { display: grid; gap: 10px; }
+.h-short { font-size: var(--fs-ui); color: var(--text); }
 .mini-spread { position: relative; flex: none; }
 .mini-spread .tcard { position: absolute; }
 .mini-spread .tcard.is-crossing { transform: rotate(90deg); z-index: 2; }
@@ -403,25 +429,11 @@ button.tcard { cursor: pointer; }
 .orient.is-rev { color: var(--text); }
 .keywords { color: var(--muted); font-size: var(--fs-ui); }
 .card-copy .in-pos { color: var(--muted); }
-.note-line { font-size: var(--fs-ui); color: var(--muted); padding-left: 14px; border-left: 1px solid var(--hairline); }
 .dignity { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; font-size: var(--fs-ui); color: var(--muted); }
 .dignity-tag { font-weight: 500; color: var(--text); }
 
 .reading-section { display: grid; gap: 20px; max-width: 760px; }
 .reading-section > h3 { font-size: var(--fs-h3); }
-.story p { max-width: 65ch; }
-.story p + p { margin-top: 12px; }
-.facts-list { margin: 0; display: grid; border-top: 1px solid var(--hairline); }
-.facts-list > div { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 4px 24px; padding-block: 16px; border-bottom: 1px solid var(--hairline); }
-.facts-list dt { font-size: var(--fs-ui); font-weight: 500; }
-.facts-list dt span { display: block; font-weight: 400; color: var(--muted); font-variant-numeric: tabular-nums; }
-.facts-list dd { margin: 0; font-size: var(--fs-ui); max-width: 60ch; }
-.pairs { display: grid; gap: 24px; }
-.pair h4 { font-family: var(--sans); font-size: var(--fs-ui); font-weight: 600; margin-bottom: 4px; }
-.pair .pair-cards { font-size: var(--fs-small); color: var(--muted); margin-bottom: 6px; }
-.pair p { font-size: var(--fs-ui); max-width: 65ch; }
-.quint { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 28px; align-items: start; }
-.quint .tcard { --w: 96px; }
 .method { max-width: 760px; color: var(--muted); font-size: var(--fs-ui); border-top: 1px solid var(--hairline); border-bottom: 1px solid var(--hairline); }
 .method summary { cursor: pointer; min-height: 48px; display: flex; align-items: center; color: var(--text); font-weight: 500; }
 .method p, .method ol { margin: 0 0 12px; max-width: 65ch; }
@@ -497,7 +509,6 @@ button.tcard { cursor: pointer; }
   .modal-text { justify-self: stretch; }
   .modal-card .tcard { --w: min(180px, 48vw); }
   .modal-text h2 { font-size: 2rem; }
-  .facts-list > div { grid-template-columns: minmax(0, 1fr); }
   .cloth { padding: 16px 6px; }
   .steps { gap: 4px 14px; }
   .table-question { font-size: 1.35rem; }

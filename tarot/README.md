@@ -18,6 +18,24 @@ A static, dependency-free tarot site. Serve the folder with any static server
 Spreads: One Card, Past · Present · Future, Situation · Action · Outcome,
 Relationship (6), Horseshoe (7) and the Celtic Cross (10).
 
+## How the written reading is produced
+
+`js/engine.js` works out the facts (`buildPayload`): each card in its position, upright or reversed,
+its keywords and core meaning, its element and how its neighbours affect it, plus the spread's
+patterns. `js/reader.js` turns those facts into the reading:
+
+- **Inside Claude** (the page published as a claude.ai artifact with the `sample` capability), the
+  facts and the question go to Claude with `READER_PROMPT`, after the last card is turned. The reading
+  streams in, in five fixed sections: The short answer, What the cards are saying, Card by card,
+  Patterns worth noticing, Bringing it together. Up to three follow-up questions can be asked.
+- **Anywhere else**, or if Claude is unavailable, a rule-based reader writes the same five sections. It
+  detects the question's topic (work, love, money, health, legal, a decision, general) and type
+  (yes/no or open), links each card to its position, and computes a lean (leaning yes, not yet,
+  leaning no, or mixed) from the cards, weighted by position, orientation and Major Arcana.
+
+The written reading and any follow-ups are saved with the reading in history and carried inside
+share links, so reopening a reading never asks Claude again.
+
 ## Sharing and keeping readings
 
 - **Copy link** encodes the whole reading (spread, question, cards, orientations, options, date)
@@ -59,7 +77,8 @@ resized to 400px wide and saved as WebP (40–60 KB each). Names follow the deck
 - `css/style.css` – all styling (light and dark themes)
 - `js/deck.js` – the 78 cards: meanings, keywords, elements, astrology
 - `js/spreads.js` – spread layouts, adjacency and position pairs
-- `js/engine.js` – shuffle, cut and the interpretation engine
+- `js/engine.js` – shuffle, cut, the interpretation engine and the reading payload
+- `js/reader.js` – the reader: Claude prompt and calls, markdown parsing and the rule-based fallback
 - `js/art.js` – image paths, the fallback SVG faces and the card back
 - `js/fx.js` – synthesised sound (off by default)
 - `js/share.js` – share links and image export

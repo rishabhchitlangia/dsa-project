@@ -169,6 +169,7 @@
   }
 
   function showStage(name) {
+    if (name !== 'reading') abortReader();
     $$('.stage').forEach(function (s) { s.classList.toggle('is-active', s.id === 'stage-' + name); });
     var reading = $('#reading');
     if (name === 'ask') {
@@ -791,63 +792,26 @@
   /* ================= reading ================= */
 
   var DIGNITY_LABEL = { strong: 'Well dignified', weak: 'Ill dignified', mixed: 'Contested', neutral: 'Neutral' };
+  var MAX_FOLLOW_UPS = 3;
+  var BASIC_NOTE = 'Basic reading. Open this in Claude for a full personal reading.';
 
-  // Which positions carry the answer in each spread.
-  var KEY_POSITIONS = {
-    one: { heart: 0 },
-    three: { heart: 1, outcome: 2 },
-    sao: { heart: 0, advice: 1, outcome: 2 },
-    relationship: { heart: 1, outcome: 4 },
-    horseshoe: { heart: 1, advice: 5, outcome: 6 },
-    celtic: { heart: 0, advice: 6, outcome: 9 }
-  };
+  // The resolved `sample` function, or null when Claude can't be asked from this page.
+  var sampleFn = null;
+  var readerCtl = null, followCtl = null, paintFrame = 0, pendingText = '';
 
-  function insight(r, label) { return r.insights.filter(function (i) { return i.label === label; })[0]; }
+  function readingPayload() {
+    return E.buildPayload(state.spread, state.drawn, { question: state.question, reversals: state.opts.reversals, dignities: state.opts.dignities });
+  }
 
-  // A 2–3 sentence plain-language answer, assembled only from the engine's output.
-  function buildSummary(r, drawn, opts) {
-    var key = KEY_POSITIONS[r.spread.id] || { heart: 0 };
-    var pc = r.perCard;
-    var kw = function (i, n) { return pc[i].keywords.slice(0, n || 2).join(' and '); };
-    var name = function (i) { return pc[i].card.name + (pc[i].reversed ? ' reversed' : ''); };
-    var n = drawn.length;
-    var out = [];
+  function abortReader() {
+    if (readerCtl) { var c = readerCtl; readerCtl = null; c.abort(); }
+    if (followCtl) { var f = followCtl; followCtl = null; f.abort(); }
+    cancelAnimationFrame(paintFrame);
+  }
 
-    if (n === 1) {
-      out.push('The answer is ' + name(0) + ': ' + kw(0, 3) + '.');
-      out.push(pc[0].meaning);
-      return out;
-    }
-
-    out.push('At the centre of this is ' + name(key.heart) + ', which points to ' + kw(key.heart) +
-      (key.outcome != null ? '; on the current path it leads to ' + kw(key.outcome) + ' (' + name(key.outcome) + ').' : '.'));
-
-    var majors = drawn.filter(function (d) { return d.card.arcana === 'major'; }).length;
-    var theme;
-    if (majors / n >= 0.5) theme = 'More than half the cards are Major Arcana, so this is a significant chapter shaped by forces larger than day-to-day choices';
-    else if (majors === 0) theme = 'There are no Major Arcana, so this is an everyday matter that is largely in your hands';
-    else theme = majors + ' of ' + n + ' cards are Major Arcana, a mix of big themes and practical detail';
-    var dom = insight(r, 'Dominant suit');
-    var lead = insight(r, 'Leading element');
-    if (dom) {
-      var suit = Object.keys(T.SUITS).filter(function (s) { return dom.value.indexOf(T.SUITS[s].name) === 0; })[0];
-      if (suit) theme += ', and ' + T.SUITS[suit].name + ' lead, so it turns on ' + T.SUITS[suit].domain;
-    } else if (lead) {
-      var el = Object.keys(E.ELEMENTS).filter(function (k) { return E.ELEMENTS[k].name === lead.value; })[0];
-      if (el) theme += ', with ' + lead.value + ' leading: ' + E.ELEMENTS[el].quality;
-    }
-    out.push(theme + '.');
-
-    if (key.advice != null) {
-      var a = pc[key.advice];
-      out.push('The advice is ' + (a.reversed ? 'to guard against ' : '') + kw(key.advice) + ' (' + name(key.advice) + ').');
-    } else if (opts.reversals) {
-      var rev = drawn.filter(function (d) { return d.reversed; }).length;
-      if (rev === 0) out.push('No cards are reversed, so energy is moving freely.');
-      else if (rev / n > 0.5) out.push('Most cards are reversed, so expect blocks or slow inner work before things move.');
-      else out.push(rev + (rev === 1 ? ' reversed card marks' : ' reversed cards mark') + ' where things are stuck.');
-    }
-    return out;
+  function shortAnswerText() {
+    var p = T.reader.parse(state.readerText || T.reader.fallback(readingPayload()));
+    return T.reader.plain(p.short || p.story || '');
   }
 
   function renderMiniSpread(container, spread, drawn) {
@@ -870,61 +834,31 @@
   function renderReading() {
     var r = state.reading;
     var sec = $('#reading');
-    var summary = buildSummary(r, state.drawn, state.opts);
     var html = '';
 
     html += '<header class="reading-head">' +
-      '<div><p class="eyebrow">' + esc(r.spread.name) + ' · ' + longDate(state.date) + '</p>' +
+      '<div class="reading-head-main"><p class="eyebrow">' + esc(r.spread.name) + ' · ' + longDate(state.date) + '</p>' +
       '<h2 id="reading-title">' + (r.question ? '“' + esc(r.question) + '”' : 'General reading') + '</h2>' +
-      '<div class="reading-summary">' + summary.map(function (s) { return '<p>' + esc(s) + '</p>'; }).join('') + '</div></div>' +
+      '<div class="short-answer" id="sec-short" hidden></div></div>' +
       '<div class="mini-spread" id="mini-spread" role="group" aria-label="The spread"></div>' +
       '</header>';
 
-    html += '<div class="reading-cards">';
-    r.perCard.forEach(function (pc, i) {
-      html += '<section class="card-section" aria-labelledby="card-title-' + i + '">' +
-        '<figure class="card-figure" data-open="' + i + '"></figure>' +
-        '<div class="card-copy">' +
-        '<p class="card-pos"><span class="num">' + (i + 1) + '</span><span><strong>' + esc(pc.position.name) + '</strong> · ' + esc(pc.position.question) + '</span></p>' +
-        '<div><h3 id="card-title-' + i + '">' + esc(pc.card.name) + '</h3>' +
-        '<p class="orient' + (pc.reversed ? ' is-rev' : '') + '">' + (pc.reversed ? 'Reversed' : 'Upright') + '</p></div>' +
-        '<p class="keywords">' + esc(pc.keywords.join(' · ')) + '</p>' +
-        '<p>' + esc(pc.meaning) + '</p>' +
-        '<p class="in-pos">' + esc(pc.inPosition) + '</p>' +
-        (pc.reversalNote ? '<p class="note-line">' + esc(pc.reversalNote) + '</p>' : '') +
-        (pc.dignity ? '<p class="dignity dignity-' + pc.dignity.state + '"><span class="dignity-tag">' + DIGNITY_LABEL[pc.dignity.state] + '.</span>' + esc(pc.dignityText) + '</p>' : '') +
-        '</div></section>';
-    });
-    html += '</div>';
+    html += '<div class="reader" id="reader">' +
+      '<div class="reader-status" id="reader-status"></div>' +
+      '<section class="reading-section" id="sec-story" hidden aria-labelledby="h-story"><h3 id="h-story">What the cards are saying</h3><div class="prose" data-body></div></section>' +
+      '<section class="reader-cards" id="sec-cards" hidden aria-labelledby="h-cards"><h3 id="h-cards">Card by card</h3><div class="reading-cards" data-body></div></section>' +
+      '<section class="reading-section" id="sec-patterns" hidden aria-labelledby="h-patterns"><h3 id="h-patterns">Patterns worth noticing</h3><div class="prose" data-body></div></section>' +
+      '<section class="reading-section" id="sec-together" hidden aria-labelledby="h-together"><h3 id="h-together">Bringing it together</h3><div class="prose" data-body></div></section>' +
+      '<div id="sec-other"></div>' +
+      '</div>';
 
-    if (r.spread.positions.length > 1) {
-      html += '<section class="reading-section story" aria-labelledby="story-title"><h3 id="story-title">The spread as a whole</h3>' +
-        r.synthesis.map(function (p) { return '<p>' + esc(p) + '</p>'; }).join('') + '</section>';
-    }
-
-    if (r.insights.length) {
-      html += '<section class="reading-section" aria-labelledby="patterns-title"><h3 id="patterns-title">Patterns</h3><dl class="facts-list">';
-      r.insights.forEach(function (ins) {
-        html += '<div><dt>' + esc(ins.label) + '<span>' + esc(ins.value) + '</span></dt><dd>' + esc(ins.text) + '</dd></div>';
-      });
-      html += '</dl></section>';
-    }
-
-    if (r.pairs.length) {
-      html += '<section class="reading-section" aria-labelledby="pairs-title"><h3 id="pairs-title">Connections</h3><div class="pairs">';
-      r.pairs.forEach(function (p) {
-        var a = state.drawn[p.cards[0]], b = state.drawn[p.cards[1]];
-        html += '<div class="pair"><h4>' + esc(p.title) + '</h4>' +
-          '<p class="pair-cards">' + esc(cardLabel(a)) + ' and ' + esc(cardLabel(b)) + (p.note ? ' · ' + esc(p.note) : '') + '</p>' +
-          '<p>' + esc(p.text) + '</p></div>';
-      });
-      html += '</div></section>';
-    }
-
-    if (r.quintessence) {
-      html += '<section class="reading-section" aria-labelledby="quint-title"><h3 id="quint-title">Quintessence</h3>' +
-        '<div class="quint"><div id="quint-card"></div><p>' + esc(r.quintessence.text) + '</p></div></section>';
-    }
+    html += '<section class="followups" id="followups" hidden aria-labelledby="fu-title"><h3 id="fu-title">Ask a follow-up</h3>' +
+      '<div class="fu-list" id="fu-list"></div>' +
+      '<form class="fu-form" id="fu-form"><label class="muted" for="fu-input">Ask the cards one more thing about this reading.</label>' +
+      '<textarea id="fu-input" class="note-input" rows="2" maxlength="300" placeholder="What should I focus on first?"></textarea>' +
+      '<div class="journal-row"><button type="submit" class="secondary-btn" id="fu-btn">Ask</button><span class="status" id="fu-status" role="status"></span></div></form>' +
+      '<p class="muted small" id="fu-done" hidden>You have used all three follow-ups for this reading.</p>' +
+      '</section>';
 
     html += '<section class="journal" aria-labelledby="journal-title"><h3 id="journal-title">Notes</h3><div id="journal-body"></div></section>';
 
@@ -939,12 +873,8 @@
 
     html += '<details class="method"><summary>How this reading works</summary>' +
       '<p>The deck is shuffled with a cryptographically random Fisher–Yates shuffle each time you riffle or wash, and part of the deck is turned end over end on each pass, which is where reversed cards come from. Your cut moves one of three piles to the top, and you choose the cards by hand.</p>' +
-      '<ol><li>Each card’s traditional Rider–Waite–Smith meaning, upright or reversed.</li>' +
-      '<li>The question its position asks.</li>' +
-      '<li>Elemental dignity (Golden Dawn): beside the same or a friendly element (Fire–Air, Water–Earth) a card is strengthened; beside a hostile one (Fire–Water, Air–Earth) it is weakened.</li>' +
-      '<li>Patterns across the spread: Major Arcana, suits, reversals, court cards and repeated numbers.</li>' +
-      '<li>Comparisons between key positions.</li>' +
-      '<li>The quintessence: the card values added and reduced to one Major Arcana card.</li></ol>' +
+      '<p>The page then works out the facts a reader would look at: each card’s traditional Rider–Waite–Smith meaning in its position, upright or reversed; how neighbouring cards strengthen or weaken each other (Golden Dawn elemental dignities); and the patterns across the spread, such as Major Arcana, suits, reversals and repeated numbers.</p>' +
+      '<p>Inside Claude, those facts and your question are sent to Claude, which writes the reading from them. Elsewhere, a simpler rule-based reader writes it from the same facts.</p>' +
       '<p>Tarot shows likely paths, not fixed fate. Treat a reading as a prompt for reflection, not advice on health, money or legal matters.</p>' +
       '</details>';
 
@@ -952,34 +882,243 @@
     sec.hidden = false;
 
     renderMiniSpread($('#mini-spread'), r.spread, state.drawn);
-    $$('.card-figure', sec).forEach(function (fig) {
-      var i = +fig.dataset.open;
-      var c = makeCard(state.drawn[i], { tag: 'button', flipped: true, label: cardLabel(state.drawn[i]) + '. Open details.' });
-      c.addEventListener('click', function () { openCardModal(state.drawn[i], r.perCard[i], { index: i }); });
-      fig.appendChild(c);
-    });
-    if (r.quintessence) {
-      $('#quint-card').appendChild(makeCard({ card: r.quintessence.card, reversed: false }, { flipped: true, label: r.quintessence.card.name }));
-    }
     renderJournal();
-
     $('#new-reading-btn').addEventListener('click', function () { showStage('ask'); $('#question').focus(); });
     $('#copy-link-btn').addEventListener('click', copyLink);
     $('#save-image-btn').addEventListener('click', saveImage);
     $('#copy-text-btn').addEventListener('click', function () { copyText(readingText(), 'Reading copied.'); });
+    $('#fu-form').addEventListener('submit', askFollowUp);
+
+    if (state.readerText) {
+      paintReader(state.readerText);
+      showReaderStatus();
+    } else if (state.source === 'live') {
+      startReader();
+    } else {
+      // A saved or shared reading without its text: never ask Claude on load. Show the basic reading.
+      state.readerText = T.reader.fallback(readingPayload());
+      state.readerSrc = 'basic';
+      paintReader(state.readerText);
+      showReaderStatus();
+    }
+    renderFollowUps();
+    refreshShareToken();
+  }
+
+  /* ----- writing the reading ----- */
+
+  function startReader() {
+    abortReader();
+    var ctl = new AbortController();
+    readerCtl = ctl;
+    var reader = $('#reader');
+    reader.setAttribute('aria-busy', 'true');
+    clearReaderSections();
+    setReaderStatus('<p class="reader-wait">Reading the spread…</p>');
+    var payload = readingPayload();
+
+    T.reader.sampleReady.then(function (sample) {
+      if (readerCtl !== ctl) return;
+      if (!sample) { finishReader(T.reader.fallback(payload), 'basic'); return; }
+      var stopper = function (label) {
+        setReaderStatus('<p class="reader-wait">' + label + ' <button type="button" class="link-btn" id="reader-stop">Stop</button></p>');
+        $('#reader-stop').addEventListener('click', function () { ctl.userStopped = true; ctl.abort(); });
+      };
+      stopper('Reading the spread…');
+      var started = false;
+      return T.reader.write(payload, {
+        signal: ctl.signal,
+        onText: function (u) {
+          if (readerCtl !== ctl) return;
+          if (!started) { started = true; stopper('Writing your reading…'); }
+          schedulePaint(u.text);
+        }
+      }).then(function (res) {
+        if (readerCtl !== ctl) return;
+        finishReader(res.text, 'claude', res.truncated ? 'This reading was cut short. The sections above are complete as far as they go.' : '');
+      }, function (e) {
+        if (readerCtl !== ctl && !ctl.userStopped) return;   // superseded: the reader moved on
+        var code = e && e.code;
+        var basic = T.reader.fallback(payload);
+        if (code === 'cancelled') finishReader(basic, 'basic', 'You stopped the full reading, so this is the basic reading.', true);
+        else if (['not_granted', 'sampling_disabled', 'not_declared', 'capability_disabled', 'capability_removed', 'unavailable'].indexOf(code) !== -1) {
+          state.sampleDenied = true;
+          finishReader(basic, 'basic');
+        } else if (code === 'rate_limited') finishReader(basic, 'basic', 'Claude is busy right now, so this is the basic reading.', true);
+        else if (code === 'session_expired') finishReader(basic, 'basic', 'Your Claude session has expired, so this is the basic reading. Sign in again to get the full reading.', true);
+        else finishReader(basic, 'basic', 'The full reading could not be written this time, so this is the basic reading.', true);
+      });
+    });
+  }
+
+  function schedulePaint(text) {
+    pendingText = text;
+    if (paintFrame) return;
+    paintFrame = requestAnimationFrame(function () {
+      paintFrame = 0;
+      paintReader(pendingText);
+    });
+  }
+
+  function finishReader(text, src, note, offerRetry) {
+    readerCtl = null;
+    cancelAnimationFrame(paintFrame); paintFrame = 0;
+    state.readerText = text;
+    state.readerSrc = src;
+    state.readerNote = note || '';
+    state.readerRetry = !!offerRetry;
+    paintReader(text);
+    showReaderStatus();
+    var reader = $('#reader'); if (reader) reader.setAttribute('aria-busy', 'false');
+    if (state.entryId) updateEntry(state.entryId, function (h) { h.text = text; h.src = src; });
+    renderFollowUps();
+    refreshShareToken();
+    announce('Your reading is ready.');
+  }
+
+  function setReaderStatus(html) { var el = $('#reader-status'); if (el) el.innerHTML = html; }
+
+  function showReaderStatus() {
+    var parts = [];
+    if (state.readerNote) parts.push(esc(state.readerNote));
+    else if (state.readerSrc === 'basic' && !sampleFn) parts.push(esc(BASIC_NOTE));
+    else if (state.readerSrc === 'basic') parts.push('Basic reading.');
+    var canWrite = state.readerSrc === 'basic' && sampleFn && !state.sampleDenied;
+    if (canWrite) parts.push('<button type="button" class="link-btn" id="reader-full">' + (state.readerRetry ? 'Try the full reading again' : 'Write the full reading') + '</button>');
+    setReaderStatus(parts.length ? '<p class="reader-note">' + parts.join(' ') + '</p>' : '');
+    var btn = $('#reader-full');
+    if (btn) btn.addEventListener('click', function () { state.readerNote = ''; startReader(); });
+  }
+
+  function clearReaderSections() {
+    ['#sec-short', '#sec-story', '#sec-cards', '#sec-patterns', '#sec-together'].forEach(function (id) {
+      var el = $(id); if (!el) return;
+      el.hidden = true;
+      var body = $('[data-body]', el); if (body) body.innerHTML = ''; else el.innerHTML = '';
+    });
+    var other = $('#sec-other'); if (other) other.innerHTML = '';
+  }
+
+  // Render the markdown into the article. Called repeatedly while the reading streams,
+  // so card entries are created once and only their text is updated.
+  function paintReader(md) {
+    var p = T.reader.parse(md);
+    var short = $('#sec-short');
+    if (!short) return;
+    short.hidden = !p.short;
+    if (p.short) short.innerHTML = '<p class="eyebrow">The short answer</p>' + T.reader.toHtml(p.short);
+    [['story', '#sec-story'], ['patterns', '#sec-patterns'], ['together', '#sec-together']].forEach(function (k) {
+      var el = $(k[1]);
+      el.hidden = !p[k[0]];
+      $('[data-body]', el).innerHTML = T.reader.toHtml(p[k[0]]);
+    });
+    var cardsSec = $('#sec-cards');
+    var list = $('[data-body]', cardsSec);
+    cardsSec.hidden = !p.cards.length;
+    p.cards.forEach(function (entry, i) {
+      var item = list.children[i];
+      if (!item) {
+        item = document.createElement('div');
+        item.className = 'card-section';
+        var fig = document.createElement('figure');
+        fig.className = 'card-figure';
+        if (state.drawn[i]) {
+          var c = makeCard(state.drawn[i], { tag: 'button', flipped: true, label: cardLabel(state.drawn[i]) + '. Open details.' });
+          c.addEventListener('click', function () { openCardModal(state.drawn[i], state.reading.perCard[i], { index: i }); });
+          fig.appendChild(c);
+        }
+        var copy = document.createElement('div');
+        copy.className = 'card-copy';
+        item.appendChild(fig); item.appendChild(copy);
+        list.appendChild(item);
+      }
+      var m = entry.title.match(/^(\d+)[.)]\s*(.*)$/);
+      var num = m ? m[1] : String(i + 1);
+      var title = m ? m[2] : entry.title;
+      item.lastChild.innerHTML = '<p class="card-pos"><span class="num">' + esc(num) + '</span></p>' +
+        '<h4 class="entry-title">' + T.reader.inline(title) + '</h4>' + T.reader.toHtml(entry.body);
+    });
+    while (list.children.length > p.cards.length) list.removeChild(list.lastChild);
+    var other = $('#sec-other');
+    other.innerHTML = p.other.map(function (o) {
+      return '<section class="reading-section"><h3>' + T.reader.inline(o.title) + '</h3><div class="prose">' + T.reader.toHtml(o.body) + '</div></section>';
+    }).join('');
+  }
+
+  /* ----- follow-ups ----- */
+
+  function renderFollowUps() {
+    var sec = $('#followups');
+    if (!sec) return;
+    var canAsk = state.readerSrc === 'claude' && !!sampleFn && !state.sampleDenied;
+    var fu = state.followUps || [];
+    sec.hidden = !canAsk && !fu.length;
+    $('#fu-list').innerHTML = fu.map(function (f) {
+      return '<div class="fu-item"><p class="fu-q">' + esc(f.q) + '</p><div class="prose">' + T.reader.toHtml(f.a) + '</div></div>';
+    }).join('');
+    var form = $('#fu-form');
+    var left = MAX_FOLLOW_UPS - fu.length;
+    form.hidden = !canAsk || left <= 0;
+    $('#fu-done').hidden = !(canAsk && left <= 0);
+    $('#fu-title').textContent = canAsk ? 'Ask a follow-up' : 'Follow-up questions';
+    if (canAsk) $('#fu-status').textContent = left + (left === 1 ? ' follow-up left' : ' follow-ups left') + ' for this reading.';
+  }
+
+  function askFollowUp(ev) {
+    ev.preventDefault();
+    var input = $('#fu-input');
+    var q = input.value.trim();
+    var status = $('#fu-status');
+    if (!q) { status.textContent = 'Write a question first.'; input.focus(); return; }
+    if ((state.followUps || []).length >= MAX_FOLLOW_UPS || followCtl) return;
+    var ctl = new AbortController();
+    followCtl = ctl;
+    var btn = $('#fu-btn');
+    btn.disabled = true; input.disabled = true;
+    var item = document.createElement('div');
+    item.className = 'fu-item';
+    item.innerHTML = '<p class="fu-q">' + esc(q) + '</p><div class="prose"><p class="reader-wait">Thinking…</p></div>';
+    $('#fu-list').appendChild(item);
+    status.textContent = '';
+    T.reader.followUp(readingPayload(), state.readerText, state.followUps || [], q, {
+      signal: ctl.signal,
+      onText: function (u) { if (followCtl === ctl) $('.prose', item).innerHTML = T.reader.toHtml(u.text); }
+    }).then(function (res) {
+      if (followCtl !== ctl) return;
+      followCtl = null;
+      state.followUps = (state.followUps || []).concat([{ q: q, a: res.text }]);
+      if (state.entryId) updateEntry(state.entryId, function (h) { h.fu = state.followUps; });
+      input.value = '';
+      renderFollowUps();
+      refreshShareToken();
+      announce('Answer ready.');
+    }, function (e) {
+      if (followCtl !== ctl) return;
+      followCtl = null;
+      item.remove();
+      var code = e && e.code;
+      if (['not_granted', 'sampling_disabled', 'not_declared', 'capability_disabled', 'capability_removed', 'unavailable'].indexOf(code) !== -1) {
+        state.sampleDenied = true;
+        renderFollowUps();
+        return;
+      }
+      renderFollowUps();
+      $('#fu-status').textContent = code === 'rate_limited' ? 'Claude is busy right now. Try again in a little while.'
+        : code === 'cancelled' ? '' : 'That follow-up could not be answered. Try again.';
+    }).then(function () {
+      var b = $('#fu-btn'), i = $('#fu-input');
+      if (b) b.disabled = false; if (i) i.disabled = false;
+    });
   }
 
   function readingText() {
     var r = state.reading;
     var lines = ['Seventy-Eight Tarot · ' + r.spread.name + ' · ' + longDate(state.date)];
     lines.push(r.question ? 'Question: ' + r.question : 'General reading');
+    lines.push('Cards: ' + state.drawn.map(function (d, i) { return (i + 1) + '. ' + r.spread.positions[i].name + ': ' + d.card.name + (d.reversed ? ' (reversed)' : ''); }).join('; '));
     lines.push('');
-    lines.push(buildSummary(r, state.drawn, state.opts).join(' '));
-    lines.push('');
-    r.perCard.forEach(function (pc, i) {
-      lines.push((i + 1) + '. ' + pc.position.name + ': ' + pc.card.name + (pc.reversed ? ' (reversed)' : ''));
-      lines.push('   ' + pc.meaning);
-    });
+    lines.push(String(state.readerText || '').replace(/\*\*(.+?)\*\*/g, '$1').trim());
+    (state.followUps || []).forEach(function (f) { lines.push('', 'Follow-up: ' + f.q, f.a); });
     var entry = state.entryId && findEntry(state.entryId);
     if (entry && entry.note) { lines.push(''); lines.push('Notes: ' + entry.note); }
     return lines.join('\n');
@@ -999,15 +1138,26 @@
 
   /* ================= sharing ================= */
 
-  function currentShareToken() {
-    return T.share.encode({
+  function shareReading() {
+    return {
       spreadId: state.spread.id,
       question: state.question,
       opts: state.opts,
       cards: state.drawn.map(function (d) { return [d.card.id, d.reversed ? 1 : 0]; }),
       date: state.date
+    };
+  }
+  // The link token with the written reading inside is built ahead of time, because
+  // compressing is asynchronous and copying must happen inside the click.
+  function refreshShareToken() {
+    state.shareToken = null;
+    if (!state.readerText || state.readerSrc !== 'claude') return;
+    var forDate = state.date;
+    T.share.encodeWithReading(shareReading(), { text: state.readerText, followUps: state.followUps || [] }).then(function (t) {
+      if (state.date === forDate) state.shareToken = t;
     });
   }
+  function currentShareToken() { return state.shareToken || T.share.encode(shareReading()); }
 
   // When the site is embedded (for example in a preview frame), a <meta name="share-base">
   // can name the public address to share instead of the frame's own URL.
@@ -1037,7 +1187,7 @@
       spread: state.spread,
       question: state.question,
       drawn: state.drawn,
-      summary: buildSummary(state.reading, state.drawn, state.opts),
+      summary: [shortAnswerText()],
       date: state.date
     }).then(function (blob) {
       var name = 'tarot-' + localDateKey(new Date(state.date)) + '-' + state.spread.id + '.png';
@@ -1055,21 +1205,25 @@
   }
 
   function openFromToken(token) {
-    var d = T.share.decode(token);
-    if (!d) return false;
-    var spread = spreadById[d.spreadId];
-    showReadingFor({
-      spread: spread,
-      question: d.question,
-      opts: d.opts,
-      date: d.date,
-      drawn: d.cards.map(function (c) { return { card: byId[c[0]], reversed: !!c[1] }; })
-    }, 'link');
-    return true;
+    return T.share.decodeFull(token).then(function (d) {
+      if (!d) return false;
+      showReadingFor({
+        spread: spreadById[d.spreadId],
+        question: d.question,
+        opts: d.opts,
+        date: d.date,
+        drawn: d.cards.map(function (c) { return { card: byId[c[0]], reversed: !!c[1] }; }),
+        text: d.text || '',
+        src: d.text ? 'claude' : '',
+        fu: d.followUps || []
+      }, 'link');
+      return true;
+    });
   }
 
   // Show a finished reading on its own, without the table.
   function showReadingFor(r, source) {
+    abortReader();
     state.spread = r.spread;
     state.question = r.question || '';
     state.opts = r.opts;
@@ -1080,7 +1234,13 @@
     state.source = source;
     state.phase = 'reading';
     var id = entryIdFor({ date: r.date, c: r.drawn.map(function (d) { return [d.card.id, d.reversed ? 1 : 0]; }) });
-    state.entryId = findEntry(id) ? id : null;
+    var saved = findEntry(id);
+    state.entryId = saved ? id : null;
+    // Prefer what the link or entry carries; fall back to what this browser saved.
+    state.readerText = r.text || (saved && saved.text) || null;
+    state.readerSrc = r.text ? (r.src || 'claude') : (saved && saved.text ? saved.src : null);
+    state.followUps = (r.fu && r.fu.length ? r.fu : (saved && saved.fu)) || [];
+    state.readerNote = ''; state.readerRetry = false;
     r.drawn.forEach(function (d) { preload(d.card); });
     showStage('reading');
     renderReading();
@@ -1105,7 +1265,11 @@
       s: h.s,
       o: { reversals: !!(h.o && h.o.reversals), dignities: !!(h.o && h.o.dignities) },
       c: h.c.map(function (c) { return [c[0], c[1] ? 1 : 0]; }),
-      note: String(h.note || '').slice(0, 4000)
+      note: String(h.note || '').slice(0, 4000),
+      text: String(h.text || '').slice(0, 20000),
+      src: h.src === 'claude' ? 'claude' : (h.text ? 'basic' : ''),
+      fu: (Array.isArray(h.fu) ? h.fu : []).slice(0, 3).filter(function (f) { return f && f.q && f.a; })
+        .map(function (f) { return { q: String(f.q).slice(0, 300), a: String(f.a).slice(0, 4000) }; })
     };
     out.id = entryIdFor(out);
     return out;
@@ -1133,7 +1297,10 @@
       q: state.question,
       s: state.spread.id,
       o: state.opts,
-      c: state.drawn.map(function (d) { return [d.card.id, d.reversed ? 1 : 0]; })
+      c: state.drawn.map(function (d) { return [d.card.id, d.reversed ? 1 : 0]; }),
+      text: state.readerText || '',
+      src: state.readerSrc || '',
+      fu: state.followUps || []
     });
     var list = loadHistory().filter(function (h) { return h.id !== entry.id; });
     list.unshift(entry);
@@ -1197,6 +1364,10 @@
       li.className = 'history-item';
       li.innerHTML = '<p class="h-meta">' + esc(new Date(h.date).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })) + ' · ' + esc(spread.name) + '</p>' +
         '<p class="h-q">' + (h.q ? esc(h.q) : 'General reading') + '</p>';
+      if (h.text) {
+        var sa = T.reader.plain(T.reader.parse(h.text).short);
+        if (sa) { var ps = document.createElement('p'); ps.className = 'h-short'; ps.textContent = sa.length > 180 ? sa.slice(0, 177).replace(/\s+\S*$/, '') + '…' : sa; li.appendChild(ps); }
+      }
       li.appendChild(thumbRow(h));
       var cardsText = document.createElement('p');
       cardsText.className = 'sr-only';
@@ -1219,7 +1390,7 @@
         var act = btn.dataset.act;
         if (act === 'open') {
           closeModal($('#history-modal'), true);
-          showReadingFor({ spread: spread, question: h.q, opts: h.o, date: h.date, drawn: h.c.map(function (c) { return { card: byId[c[0]], reversed: !!c[1] }; }) }, 'saved');
+          showReadingFor({ spread: spread, question: h.q, opts: h.o, date: h.date, drawn: h.c.map(function (c) { return { card: byId[c[0]], reversed: !!c[1] }; }), text: h.text, src: h.src, fu: h.fu }, 'saved');
         } else if (act === 'note') {
           editNoteInline(li, h);
         } else if (act === 'delete') {
@@ -1301,7 +1472,10 @@
         if (!h) { skipped++; return; }
         var existing = byKey[h.id];
         if (existing) {
-          if (!existing.note && h.note) { existing.note = h.note; merged++; }
+          var changed = false;
+          if (!existing.note && h.note) { existing.note = h.note; changed = true; }
+          if ((!existing.text || existing.src !== 'claude') && h.text && h.src === 'claude') { existing.text = h.text; existing.src = h.src; existing.fu = h.fu; changed = true; }
+          if (changed) merged++;
           return;
         }
         byKey[h.id] = h; list.push(h); added++;
@@ -1309,7 +1483,7 @@
       var ok = saveHistoryList(list);
       renderHistory();
       status.textContent = ok
-        ? 'Imported ' + added + (added === 1 ? ' new reading' : ' new readings') + (merged ? ', added ' + merged + (merged === 1 ? ' note' : ' notes') : '') + (skipped ? ', skipped ' + skipped + ' unreadable' : '') + '.'
+        ? 'Imported ' + added + (added === 1 ? ' new reading' : ' new readings') + (merged ? ', updated ' + merged + (merged === 1 ? ' existing one' : ' existing ones') : '') + (skipped ? ', skipped ' + skipped + ' unreadable' : '') + '.'
         : 'The readings could not be saved in this browser.';
     };
     reader.onerror = function () { status.textContent = 'That file could not be read.'; };
@@ -1397,6 +1571,8 @@
     state.reading = null;
     state.entryId = null;
     state.source = 'live';
+    state.readerText = null; state.readerSrc = null; state.readerNote = ''; state.readerRetry = false;
+    state.followUps = []; state.shareToken = null;
     state.date = Date.now();
     state.busy = false;
     clearHash();
@@ -1464,6 +1640,10 @@
     });
 
     window.addEventListener('hashchange', routeFromHash);
+    T.reader.sampleReady.then(function (s) {
+      sampleFn = s;
+      if (!$('#reading').hidden && state.readerText) { showReaderStatus(); renderFollowUps(); }
+    });
 
     var rt;
     window.addEventListener('resize', function () {

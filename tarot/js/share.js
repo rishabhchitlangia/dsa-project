@@ -39,6 +39,59 @@
     return PREFIX + b64urlEncode(JSON.stringify(payload));
   }
 
+  /* The written reading and follow-ups travel compressed (deflate) inside the same token,
+   * so a shared link shows the reading without asking Claude again. */
+  function bytesToB64url(bytes) {
+    var bin = '';
+    for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  function b64urlToBytes(s) {
+    s = s.replace(/-/g, '+').replace(/_/g, '/');
+    while (s.length % 4) s += '=';
+    var bin = atob(s), out = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+  function pipe(bytes, stream) {
+    return new Response(new Blob([bytes]).stream().pipeThrough(stream)).arrayBuffer().then(function (b) { return new Uint8Array(b); });
+  }
+  function compress(text) {
+    if (typeof CompressionStream === 'undefined') return Promise.resolve(null);
+    return pipe(new TextEncoder().encode(text), new CompressionStream('deflate-raw')).then(bytesToB64url, function () { return null; });
+  }
+  function decompress(b64) {
+    if (typeof DecompressionStream === 'undefined') return Promise.resolve(null);
+    return pipe(b64urlToBytes(b64), new DecompressionStream('deflate-raw')).then(function (b) { return new TextDecoder().decode(b); }, function () { return null; });
+  }
+
+  // extra: { text, followUps: [{q, a}] }. Resolves a token; without compression support, the cards only.
+  function encodeWithReading(reading, extra) {
+    var base = encode(reading);
+    if (!extra || !extra.text) return Promise.resolve(base);
+    return compress(JSON.stringify({ t: extra.text, f: extra.followUps || [] })).then(function (z) {
+      if (!z) return base;
+      var p = JSON.parse(b64urlDecode(base.slice(PREFIX.length)));
+      p.z = z;
+      return PREFIX + b64urlEncode(JSON.stringify(p));
+    });
+  }
+
+  // Resolves the reading (with text and followUps when the link carries them) or null.
+  function decodeFull(token) {
+    var d = decode(token);
+    if (!d || !d.z) return Promise.resolve(d);
+    return decompress(d.z).then(function (json) {
+      try {
+        var x = JSON.parse(json);
+        d.text = String(x.t || '').slice(0, 20000);
+        d.followUps = (Array.isArray(x.f) ? x.f : []).slice(0, 3).map(function (f) { return { q: String(f.q || '').slice(0, 300), a: String(f.a || '').slice(0, 4000) }; });
+      } catch (e) { /* keep the cards */ }
+      delete d.z;
+      return d;
+    });
+  }
+
   function decode(token) {
     if (!token || token.indexOf(PREFIX) !== 0) return null;
     try {
@@ -57,7 +110,8 @@
         question: String(p.q || '').slice(0, 240),
         opts: { reversals: !!(p.o && p.o[0]), dignities: !!(p.o && p.o[1]) },
         cards: cards,
-        date: (Number(p.d) || Math.round(Date.now() / 1000)) * 1000
+        date: (Number(p.d) || Math.round(Date.now() / 1000)) * 1000,
+        z: typeof p.z === 'string' ? p.z : null
       };
     } catch (e) {
       return null;
@@ -234,5 +288,5 @@
     });
   }
 
-  T.share = { encode: encode, decode: decode, renderImage: renderImage, PREFIX: PREFIX };
+  T.share = { encode: encode, encodeWithReading: encodeWithReading, decodeFull: decodeFull, renderImage: renderImage, PREFIX: PREFIX };
 })();
