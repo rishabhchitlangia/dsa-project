@@ -1,44 +1,66 @@
-# Seventy-Eight · an interactive tarot table
+# Seventy-Eight · a tarot reading table
 
-A static, dependency-free tarot reading website. Open `index.html` in a browser
-(or serve the folder with any static server, e.g. `python3 -m http.server`).
+A static, dependency-free tarot site. Serve the folder with any static server
+(`python3 -m http.server`) or open `index.html` directly.
 
 ## The experience
 
-1. **Ask** – type a question, choose a spread, and pick a reading method.
-2. **Shuffle** – riffle the deck or "wash" the cards across the cloth, as many times as you like.
+1. **Ask** – write a question, pick a spread, and (optionally) adjust the reading options.
+   A **card of the day** sits beside the form: one card per local date, the same all day.
+2. **Shuffle** – riffle, or wash the cards across the table, as often as you like.
 3. **Cut** – the deck splits into three piles; you choose which goes on top.
-4. **Draw** – all 78 cards fan out face down; you pick each card by hand and it flies to its position.
-5. **Reveal** – turn cards one at a time (3D flip, sparks, chime) or all in order.
-6. **Read** – a layered written reading, card detail pop-ups, copy-as-text, and a local history of past readings.
+4. **Draw** – the deck fans out face down; pick each card by hand (mouse, touch, or arrow keys and Enter).
+5. **Reveal** – turn cards one at a time or all in order.
+6. **Read** – the reading is laid out as an article: question, the spread in miniature,
+   a short plain-language summary, then each card in its own section, followed by
+   patterns, connections, the quintessence and your notes.
 
 Spreads: One Card, Past · Present · Future, Situation · Action · Outcome,
 Relationship (6), Horseshoe (7) and the Celtic Cross (10).
 
+## Sharing and keeping readings
+
+- **Copy link** encodes the whole reading (spread, question, cards, orientations, options, date)
+  into the URL hash. Opening the link shows the finished reading directly.
+- **Save as image** renders the question, spread and summary to a PNG.
+- **Past readings** are kept in the browser (`localStorage`). Each reading can carry a note
+  ("what actually happened"), can be deleted, and the whole journal can be exported to JSON and
+  imported again on another device; imports merge without duplicates.
+- Everything degrades gracefully: without storage the site still works (no history), and if the
+  card images can't load, each card falls back to a drawn SVG face.
+
 ## Reading methodology
 
-The interpretation engine (`js/engine.js`) follows the layered approach most
-working readers teach:
+The interpretation engine (`js/engine.js`) follows the layered approach most working readers teach:
 
 | Layer | What it does |
 | --- | --- |
 | Card × position | Each card's Rider–Waite–Smith meaning is read against the question its position asks. |
-| Reversals | Upside-down cards read as blocked, internal, delayed or excessive energy. Reversals come from the shuffle itself: each pass turns part of the deck end-over-end. |
-| Elemental dignities | Golden Dawn rules: same element or Fire–Air / Water–Earth strengthen; Fire–Water / Air–Earth weaken. Majors take the element of their astrological attribution. Each card is read through the neighbours it touches in the layout. |
-| Spread patterns | Share of Major Arcana, dominant and missing suits, leading element, reversal count, court cards, repeated numbers. |
-| Position pairs | Key comparisons, e.g. Celtic Cross Above↔Below, Goal↔Outcome, Near Future↔Outcome, Subconscious↔Hopes/Fears, Advice↔Outcome; Past↔Future "rhyme or contrast" in the three-card spread. |
-| Quintessence | Card values summed and reduced to a single Major Arcana card as the reading's underlying lesson. |
-| Synthesis | The cards are woven into one narrative per spread. |
+| Reversals | Upside-down cards read as blocked, internal, delayed or excessive energy. They come from the shuffle itself: each pass turns part of the deck end over end. |
+| Elemental dignities | Golden Dawn rules: same element or Fire–Air / Water–Earth strengthen; Fire–Water / Air–Earth weaken. |
+| Spread patterns | Major Arcana share, dominant and missing suits, leading element, reversals, court cards, repeated numbers. |
+| Position pairs | Key comparisons such as Celtic Cross Above↔Below or Advice↔Outcome. |
+| Quintessence | Card values summed and reduced to a single Major Arcana card. |
+| Synthesis | The cards woven into one narrative per spread. |
 
 Randomness uses `crypto.getRandomValues` with an unbiased Fisher–Yates shuffle.
+
+## Card images
+
+`assets/cards/` holds the 78 illustrations by Pamela Colman Smith from the 1909
+Rider–Waite–Smith deck (public domain), taken from Wikimedia Commons (files such as
+`RWS_Tarot_17_Star.jpg` and `Cups03.jpg`). They were cropped to the printed border,
+resized to 400px wide and saved as WebP (40–60 KB each). Names follow the deck data:
+`major-17-star.webp`, `cups-03.webp`, `pentacles-13.webp`.
 
 ## Files
 
 - `index.html` – page structure
-- `css/style.css` – all styling and animation
+- `css/style.css` – all styling (light and dark themes)
 - `js/deck.js` – the 78 cards: meanings, keywords, elements, astrology
 - `js/spreads.js` – spread layouts, adjacency and position pairs
 - `js/engine.js` – shuffle, cut and the interpretation engine
-- `js/art.js` – procedurally drawn SVG card faces and card back
-- `js/fx.js` – starfield, sparkles and synthesised sound (Web Audio)
-- `js/app.js` – the interactive flow and animations
+- `js/art.js` – image paths, the fallback SVG faces and the card back
+- `js/fx.js` – synthesised sound (off by default)
+- `js/share.js` – share links and image export
+- `js/app.js` – the interactive flow, reading page, card of the day and journal
