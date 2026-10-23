@@ -1349,11 +1349,13 @@
     ul.innerHTML = '';
     $('#export-btn').disabled = !store.available;
     $('#import-input').disabled = !store.available;
+    resetClearButton();
     if (!store.available) {
       ul.innerHTML = '<li class="history-empty">Browser storage is turned off here, so readings can’t be saved.</li>';
       return;
     }
     var list = loadHistory();
+    $('#clear-btn').hidden = !list.length;
     if (!list.length) {
       ul.innerHTML = '<li class="history-empty">No readings yet. Finished readings appear here.</li>';
       return;
@@ -1435,6 +1437,33 @@
         box.remove();
       }
     });
+  }
+
+  // Deleting everything takes a second click within a few seconds, so one slip can't wipe the journal.
+  var clearTimer = 0;
+  function resetClearButton() {
+    var btn = $('#clear-btn');
+    clearTimeout(clearTimer);
+    delete btn.dataset.armed;
+    btn.textContent = 'Delete all';
+    btn.hidden = !store.available;
+  }
+  function clearHistory() {
+    var btn = $('#clear-btn');
+    if (!btn.dataset.armed) {
+      btn.dataset.armed = '1';
+      btn.textContent = 'Select again to delete all';
+      clearTimer = setTimeout(resetClearButton, 4000);
+      return;
+    }
+    var count = loadHistory().length;
+    var ok = saveHistoryList([]);
+    if (state.entryId) { state.entryId = null; renderJournal(); }
+    renderHistory();
+    $('#history-status').textContent = ok
+      ? 'Deleted ' + count + (count === 1 ? ' reading.' : ' readings.')
+      : 'The readings could not be deleted in this browser.';
+    $('#export-btn').focus();
   }
 
   function exportHistory() {
@@ -1617,6 +1646,7 @@
 
     $('#history-btn').addEventListener('click', function () { $('#history-status').textContent = ''; renderHistory(); openModal('#history-modal'); });
     $('#export-btn').addEventListener('click', exportHistory);
+    $('#clear-btn').addEventListener('click', clearHistory);
     $('#import-input').addEventListener('change', function (e) {
       var f = e.target.files && e.target.files[0];
       if (f) importHistory(f);
